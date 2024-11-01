@@ -16,6 +16,7 @@ class User(AbstractUser, CommonModel):
     gender = models.CharField(max_length=20 ,choices=GenderChoices)
     birthday = models.PositiveIntegerField()
     photo = models.URLField(null=True)
+    google_cal_url = models.URLField(max_length=255, null=True)
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
