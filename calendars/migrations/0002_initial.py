@@ -10,20 +10,26 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('calendars', '0001_initial'),
-        ('memos', '0001_initial'),
+        ("calendars", "0001_initial"),
+        ("memos", "0001_initial"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='schedule',
-            name='memo',
-            field=models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='memo_schedule', to='memos.memo'),
+            model_name="schedule",
+            name="memo",
+            field=models.OneToOneField(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="memo_schedule",
+                to="memos.memo",
+            ),
         ),
         migrations.AddField(
-            model_name='schedule',
-            name='participant',
-            field=models.ManyToManyField(related_name='user_schedule', to=settings.AUTH_USER_MODEL),
+            model_name="schedule",
+            name="participant",
+            field=models.ManyToManyField(
+                related_name="user_schedule", to=settings.AUTH_USER_MODEL
+            ),
         ),
     ]

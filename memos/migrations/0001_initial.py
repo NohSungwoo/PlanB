@@ -9,36 +9,59 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('calendars', '0001_initial'),
+        ("calendars", "0001_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='MemoSet',
+            name="MemoSet",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('title', models.CharField(max_length=50)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                ("title", models.CharField(max_length=50)),
             ],
             options={
-                'abstract': False,
+                "abstract": False,
             },
         ),
         migrations.CreateModel(
-            name='Memo',
+            name="Memo",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('title', models.CharField(default='새로운 메모', max_length=50)),
-                ('text', models.TextField(blank=True, null=True)),
-                ('is_cal', models.BooleanField(default=False)),
-                ('is_todo', models.BooleanField(default=False)),
-                ('calendar', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='calendar_memo', to='calendars.calendar')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                ("title", models.CharField(default="새로운 메모", max_length=50)),
+                ("text", models.TextField(blank=True, null=True)),
+                ("is_cal", models.BooleanField(default=False)),
+                ("is_todo", models.BooleanField(default=False)),
+                (
+                    "calendar",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="calendar_memo",
+                        to="calendars.calendar",
+                    ),
+                ),
             ],
             options={
-                'abstract': False,
+                "abstract": False,
             },
         ),
     ]

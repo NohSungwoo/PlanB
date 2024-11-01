@@ -6,12 +6,12 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('calendars', '0002_initial'),
+        ("calendars", "0002_initial"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='schedule',
-            name='google_url',
+            model_name="schedule",
+            name="google_url",
         ),
     ]
