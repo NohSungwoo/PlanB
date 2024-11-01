@@ -7,10 +7,16 @@ license = "MIT"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = "3.12.6"
 django = "^5.1.2"
+black = "^24.10.0"
+isort = "^5.13.2"
 
+[tool.isort]
+profile = "black"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+
