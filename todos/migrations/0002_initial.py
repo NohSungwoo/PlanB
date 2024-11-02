@@ -10,27 +10,27 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ("memos", "0001_initial"),
+        ("todos", "0001_initial"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AddField(
-            model_name="memoset",
+            model_name="todoset",
             name="user",
             field=models.ForeignKey(
                 on_delete=django.db.models.deletion.CASCADE,
-                related_name="user_memo_set",
+                related_name="user_todo_set",
                 to=settings.AUTH_USER_MODEL,
             ),
         ),
         migrations.AddField(
-            model_name="memo",
-            name="memo_set",
+            model_name="todo",
+            name="todo_set",
             field=models.ForeignKey(
                 on_delete=django.db.models.deletion.CASCADE,
-                related_name="set_memo",
-                to="memos.memoset",
+                related_name="set_todo",
+                to="todos.todoset",
             ),
         ),
     ]
