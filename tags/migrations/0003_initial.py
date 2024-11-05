@@ -10,27 +10,18 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ("todos", "0001_initial"),
+        ("tags", "0002_initial"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AddField(
-            model_name="todoset",
+            model_name="tag",
             name="user",
             field=models.ForeignKey(
                 on_delete=django.db.models.deletion.CASCADE,
-                related_name="user_todo_set",
+                related_name="user_tags",
                 to=settings.AUTH_USER_MODEL,
-            ),
-        ),
-        migrations.AddField(
-            model_name="todo",
-            name="todo_set",
-            field=models.ForeignKey(
-                on_delete=django.db.models.deletion.CASCADE,
-                related_name="set_todo",
-                to="todos.todoset",
             ),
         ),
     ]

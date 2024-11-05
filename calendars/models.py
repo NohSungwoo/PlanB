@@ -9,11 +9,6 @@ class Calendar(CommonModel):
     )
     title = models.CharField(max_length=50)
 
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(fields=["user", "title"], name="unique_calendar")
-        ]
-
 
 class Schedule(CommonModel):
     calendar = models.ForeignKey(

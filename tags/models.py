@@ -13,8 +13,3 @@ class Tag(CommonModel):
     todo = models.ManyToManyField("todos.Todo", related_name="todo_tags")
     memo = models.ManyToManyField("memos.Memo", related_name="memo_tags")
     title = models.CharField(max_length=30, unique=True)
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(fields=["user", "title"], name="unique_tag")
-        ]
