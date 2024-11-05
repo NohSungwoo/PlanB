@@ -9,6 +9,11 @@ class MemoSet(CommonModel):
     )
     title = models.CharField(max_length=50)
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["user", "title"], name="unique_user_title")
+        ]
+
 
 class Memo(CommonModel):
     memo_set = models.ForeignKey(
@@ -16,3 +21,5 @@ class Memo(CommonModel):
     )
     title = models.CharField(max_length=50, default="새로운 메모")
     text = models.TextField(null=True, blank=True)
+
+
