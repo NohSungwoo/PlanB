@@ -11,7 +11,7 @@ class MemoSet(CommonModel):
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=["user", "title"], name="unique_user_title")
+            models.UniqueConstraint(fields=["user", "title"], name="unique_memo_set")
         ]
 
 
