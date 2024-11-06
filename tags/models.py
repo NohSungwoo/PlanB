@@ -7,9 +7,9 @@ class Tag(CommonModel):
     user = models.ForeignKey(
         "users.User", on_delete=models.CASCADE, related_name="user_tags"
     )
-    calendar = models.ManyToManyField(
-        "calendars.Calendar", related_name="calendar_tags"
+    schedule = models.ManyToManyField(
+        "calendars.Schedule", related_name="schedule_tags"
     )
     todo = models.ManyToManyField("todos.Todo", related_name="todo_tags")
     memo = models.ManyToManyField("memos.Memo", related_name="memo_tags")
-    title = models.CharField(max_length=30)
+    title = models.CharField(max_length=30, unique=True)
