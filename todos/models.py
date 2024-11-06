@@ -9,6 +9,11 @@ class TodoSet(CommonModel):
     )
     title = models.CharField(max_length=50)
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["user", "title"], name="unique_todo")
+        ]
+
 
 class Todo(CommonModel):
     todo_set = models.ForeignKey(
