@@ -56,8 +56,6 @@ class TestSignUp(APITestCase):
 
         data = response.json()
 
-        print(data)
-
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(data["email"], ["Enter a valid email address."])
         self.assertEqual(data["gender"], ['"unknown" is not a valid choice.'])
