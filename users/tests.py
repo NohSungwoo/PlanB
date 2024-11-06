@@ -39,7 +39,7 @@ class TestSignUp(APITestCase):
             },
         )
 
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_serializer_data(self):
 
