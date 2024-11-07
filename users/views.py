@@ -1,7 +1,7 @@
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login, logout
 from rest_framework import status
 from rest_framework.exceptions import ParseError
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -9,6 +9,10 @@ from users.serializers import LoginSerializer, UserSerializer
 
 
 class SignUp(APIView):
+
+    permission_classes = [AllowAny]
+    serializer_class = UserSerializer
+
     def post(self, request):
         try:
             password = request.data["password"]
@@ -16,7 +20,7 @@ class SignUp(APIView):
         except KeyError:
             raise ParseError("Need Password")
 
-        serializer = UserSerializer(data=request.data)
+        serializer = self.serializer_class(data=request.data)
 
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -54,3 +58,12 @@ class Login(APIView):
         serializer = self.serializer_class(user)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class Logout(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        logout(request)
+        return Response({"detail": "Logout success"}, status=status.HTTP_200_OK)
