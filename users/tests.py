@@ -79,10 +79,14 @@ class TestLogin(APITestCase):
 
     def test_login(self):
         # 정상 로그인 요청
-        response = self.client.post(self.URL, data={"email": "tester@naver.com", "password": "123123"})
+        response = self.client.post(
+            self.URL, data={"email": "tester@naver.com", "password": "123123"}
+        )
         data = response.json()
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK, {"login data invalid"})
+        self.assertEqual(
+            response.status_code, status.HTTP_200_OK, {"login data invalid"}
+        )
         self.assertEqual(data["email"], "tester@naver.com", "email value error")
 
     def test_missing_data(self):
@@ -95,8 +99,10 @@ class TestLogin(APITestCase):
 
     def test_invalid_data(self):
         # 값이 잘못된 경우
-        response = self.client.post(self.URL, data={"email": "tester", "password": "1212"})
+        response = self.client.post(
+            self.URL, data={"email": "tester", "password": "1212"}
+        )
         data = response.json()
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(data, {"detail":"It's not valid"})
+        self.assertEqual(data, {"detail": "It's not valid"})
