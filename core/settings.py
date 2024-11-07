@@ -45,6 +45,7 @@ CUSTOM_APPS = [
     "tags.apps.TagsConfig",
     "memos.apps.MemosConfig",
     "todos.apps.TodosConfig",
+    "drf_spectacular",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + CUSTOM_APPS
