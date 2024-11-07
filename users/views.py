@@ -1,11 +1,11 @@
 from django.contrib.auth import authenticate, login
 from rest_framework import status
 from rest_framework.exceptions import ParseError
-from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.permissions import AllowAny
 
-from users.serializers import LoginSerializer, UserSerializer
+from users.serializers import UserSerializer, LoginSerializer
 
 
 class SignUp(APIView):
@@ -48,9 +48,7 @@ class Login(APIView):
         user = authenticate(request, email=email, password=password)
 
         if not user:
-            return Response(
-                {"detail": "It's not valid"}, status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"detail": "It's not valid"}, status=status.HTTP_400_BAD_REQUEST)
 
         login(request, user)
 
