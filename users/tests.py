@@ -1,6 +1,8 @@
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from users.models import User
+
 
 class TestSignUp(APITestCase):
     NAME = "SignUp Test"
@@ -63,3 +65,44 @@ class TestSignUp(APITestCase):
             data["birthday"],
             ["Date has wrong format. Use one of these formats instead: YYYY-MM-DD."],
         )
+
+
+class TestLogin(APITestCase):
+
+    URL = "/api/v1/users/login/"
+
+    def setUp(self):
+        user = User.objects.create(email="tester@naver.com", birthday="1995-08-17")
+        user.set_password("123123")
+        user.save()
+
+    def test_login(self):
+        # 정상 로그인 요청
+        response = self.client.post(
+            self.URL, data={"email": "tester@naver.com", "password": "123123"}
+        )
+        print(response.status_code)
+        data = response.json()
+
+        self.assertEqual(
+            response.status_code, status.HTTP_200_OK, {"login data invalid"}
+        )
+        self.assertEqual(data["email"], "tester@naver.com", "email value error")
+
+    def test_missing_data(self):
+        # 값이 누락된 경우
+        response = self.client.post(self.URL, data={"email": "unknown"})
+        data = response.json()
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(data, {"detail": "Missing data"})
+
+    def test_invalid_data(self):
+        # 값이 잘못된 경우
+        response = self.client.post(
+            self.URL, data={"email": "tester", "password": "1212"}
+        )
+        data = response.json()
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(data, {"detail": "It's not valid"})
