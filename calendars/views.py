@@ -29,6 +29,8 @@ class CalendarListView(ListAPIView):
     def get(self, request):
         pass
 
+
+class CalendarCreateView(APIView):
     @extend_schema(
         summary="캘린더 생성",
         description="새 캘린더를 생성합니다.",
@@ -108,7 +110,7 @@ class ScheduleCopyView(APIView):
         )
 
 
-class ScheduleListView(APIView):
+class ScheduleListView(ListAPIView):
     @extend_schema(
         summary="일정 조회",
         description="기간 내의 일정을 조회합니다. 일간 보기, 주간 보기, 월간 보기 기능이 있으며, 날짜를 기준으로 Pagination을 지원합니다. 원하는 캘린더들을 선택하여 요청을 보낼 수 있습니다.",
@@ -151,16 +153,20 @@ class ScheduleSearchView(APIView):
 
 class ScheduleDetailView(APIView):
     @extend_schema(
-        summary="일정 수정",
-        description="schedule_id path param을 기준으로 일정을 수정합니다. 함께 있는 Memo는 메모 수정 API를 호출해야 합니다.",
-        request=ScheduleUpdateSerializer,
+        summary="일정 상세 조회",
+        description="schedule_id path param을 기준으로 일정을 조회합니다.",
         responses={200: ScheduleDetailSerializer},
         tags=["Schedules"],
     )
-    def put(self, request, schedule_id):
+    def get(self, request, schedule_id):
         # Placeholder implementation
-        return Response({"message": f"Updated schedule {schedule_id}"}, status=status.HTTP_200_OK)
+        return Response(
+            {"message": f"Details for schedule {schedule_id}"},
+            status=status.HTTP_200_OK,
+        )
 
+
+class ScheduleDeleteView(APIView):
     @extend_schema(
         summary="일정 삭제",
         description="schedule_id path param을 기준으로 일정을 삭제합니다.",
@@ -170,3 +176,16 @@ class ScheduleDetailView(APIView):
     def delete(self, request, schedule_id):
         # Placeholder implementation
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ScheduleUpdateView(APIView):
+    @extend_schema(
+        summary="일정 수정",
+        description="schedule_id path param을 기준으로 일정을 수정합니다. 함께 있는 Memo는 메모 수정 API를 호출해야 합니다.",
+        request=ScheduleUpdateSerializer,
+        responses={200: ScheduleDetailSerializer},
+        tags=["Schedules"],
+    )
+    def put(self, request, schedule_id):
+        # Placeholder implementation
+        return Response({"message": f"Updated schedule {schedule_id}"}, status=status.HTTP_200_OK)
