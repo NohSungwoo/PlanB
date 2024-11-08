@@ -25,7 +25,7 @@ SECRET_KEY = "django-insecure-e(vw6xfk1ga9q-87j@%4#o6xu$yk1sqqi(6_h$o#6vj#@6#h70
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["chltm.mooo.com", "127.0.0.1"]
 
 
 # Application definition
@@ -45,6 +45,7 @@ CUSTOM_APPS = [
     "tags.apps.TagsConfig",
     "memos.apps.MemosConfig",
     "todos.apps.TodosConfig",
+    "drf_spectacular",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + CUSTOM_APPS
@@ -133,3 +134,24 @@ STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 AUTH_USER_MODEL = "users.User"
+
+REST_FRAMEWORK = {
+    "DEFAULT_RENDERER_CLASSES": [
+        "rest_framework.renderers.JSONRenderer",
+        "rest_framework.renderers.BrowsableAPIRenderer",
+    ],
+    "DEFAULT_PARSER_CLASSES": [
+        "rest_framework.parsers.JSONParser",
+        "rest_framework.parsers.FormParser",
+        "rest_framework.parsers.MultiPartParser",
+    ],
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+# for more settings, see https://drf-spectacular.readthedocs.io/en/latest/settings.html
+SPECTACULAR_SETTINGS = {
+    "TITLE": "PlanA",
+    "DESCRIPTION": "A Schedule Integrator",
+    "VERSION": "0.0.1",
+    "SERVE_INCLUDE_SCHEMA": True,
+}
