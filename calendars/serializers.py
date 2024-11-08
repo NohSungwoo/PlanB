@@ -55,8 +55,10 @@ class ScheduleListSerializer(s.Serializer):
 class ScheduleCopySerializer(s.Serializer):
     pass
 
+
 class ScheduleListQuerySerializer(s.Serializer):
     pass
+
 
 class ScheduleSearchQuerySerializer(s.Serializer):
     pass

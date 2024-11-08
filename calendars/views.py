@@ -29,6 +29,17 @@ class CalendarListView(ListAPIView):
     def get(self, request):
         pass
 
+    @extend_schema(
+        summary="캘린더 생성",
+        description="새 캘린더를 생성합니다.",
+        request=CalendarCreateSerializer,
+        responses={201: CalendarDetailSerializer},
+        tags=["Calendars"],
+    )
+    def post(self, request):
+        # Placeholder implementation
+        return Response({"message": "Calendar created"}, status=status.HTTP_201_CREATED)
+
 
 class CalendarDetailView(APIView):
     @extend_schema(
@@ -69,19 +80,6 @@ class CalendarDetailView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class CalendarCreateView(APIView):
-    @extend_schema(
-        summary="캘린더 생성",
-        description="새 캘린더를 생성합니다.",
-        request=CalendarCreateSerializer,
-        responses={201: CalendarDetailSerializer},
-        tags=["Calendars"],
-    )
-    def post(self, request):
-        # Placeholder implementation
-        return Response({"message": "Calendar created"}, status=status.HTTP_201_CREATED)
-
-
 class ScheduleCreateView(APIView):
     @extend_schema(
         summary="일정 등록",
@@ -115,7 +113,7 @@ class ScheduleListView(APIView):
         summary="일정 조회",
         description="기간 내의 일정을 조회합니다. 일간 보기, 주간 보기, 월간 보기 기능이 있으며, 날짜를 기준으로 Pagination을 지원합니다. 원하는 캘린더들을 선택하여 요청을 보낼 수 있습니다.",
         parameters=[
-            ScheduleListQuerySerializer,
+            # ScheduleListQuerySerializer, # TODO - Query Param Serializer
             OpenApiParameter(
                 name="start_date", description="조회 시작 날짜", required=True, type=str
             ),
@@ -139,7 +137,7 @@ class ScheduleSearchView(APIView):
         summary="일정 검색",
         description="문자열 기반 검색을 수행합니다. Calendar 필터링 옵션을 할 수 있습니다. Tag 옵션을 사용하여 지정된 태그만을 필터링 할 수 있습니다.",
         parameters=[
-            ScheduleSearchQuerySerializer,
+            # ScheduleSearchQuerySerializer, # TODO - Query Param Serializer
             OpenApiParameter(name="query", description="검색 문자열", required=True, type=str),
             OpenApiParameter(name="tag", description="필터링할 태그", required=False, type=str),
         ],
@@ -151,19 +149,7 @@ class ScheduleSearchView(APIView):
         return Response({"message": "Schedule search results"}, status=status.HTTP_200_OK)
 
 
-class ScheduleDeleteView(APIView):
-    @extend_schema(
-        summary="일정 삭제",
-        description="schedule_id path param을 기준으로 일정을 삭제합니다.",
-        responses={204: ScheduleDetailSerializer},
-        tags=["Schedules"],
-    )
-    def delete(self, request, schedule_id):
-        # Placeholder implementation
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-class ScheduleUpdateView(APIView):
+class ScheduleDetailView(APIView):
     @extend_schema(
         summary="일정 수정",
         description="schedule_id path param을 기준으로 일정을 수정합니다. 함께 있는 Memo는 메모 수정 API를 호출해야 합니다.",
@@ -174,3 +160,13 @@ class ScheduleUpdateView(APIView):
     def put(self, request, schedule_id):
         # Placeholder implementation
         return Response({"message": f"Updated schedule {schedule_id}"}, status=status.HTTP_200_OK)
+
+    @extend_schema(
+        summary="일정 삭제",
+        description="schedule_id path param을 기준으로 일정을 삭제합니다.",
+        responses={204: ScheduleDetailSerializer},
+        tags=["Schedules"],
+    )
+    def delete(self, request, schedule_id):
+        # Placeholder implementation
+        return Response(status=status.HTTP_204_NO_CONTENT)
