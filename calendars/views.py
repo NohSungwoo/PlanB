@@ -1,13 +1,12 @@
-from rest_framework.views import APIView
-from rest_framework.generics import ListAPIView
-from rest_framework.views import APIView
 from drf_spectacular.utils import extend_schema
-from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.generics import ListAPIView
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
 from .serializers import (
-    CalendarDetailSerializer,
-    CalendarUpdateSerializer,
     CalendarCreateSerializer,
+    CalendarDetailSerializer,
     CalendarListSerializer,
 )
 
@@ -40,7 +39,7 @@ class CalendarDetailView(APIView):
     @extend_schema(
         summary="캘린더 속성 수정",
         description="캘린더의 속성을 수정합니다.",
-        request=CalendarUpdateSerializer,
+        request=CalendarDetailSerializer,
         responses={200: CalendarDetailSerializer},
         tags=["Calendars"],
     )

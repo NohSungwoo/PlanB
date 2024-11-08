@@ -1,4 +1,5 @@
 from rest_framework import serializers as s
+
 from calendars.models import Calendar, Schedule
 
 
@@ -8,19 +9,15 @@ class CalendarDetailSerializer(s.ModelSerializer):
         fields = ("title",)
 
 
-class CalendarUpdateSerializer(s.ModelSerializer):
+class CalendarListSerializer(s.Serializer):
     pass
 
 
-class CalendarCreateSerializer(s.ModelSerializer):
+class CalendarCreateSerializer(s.Serializer):
     pass
 
 
-class CalendarListSerializer(s.ListSerializer):
-    pass
-
-
-class ScheduleSerializer(s.ModelSerializer):
+class ScheduleSerializer(s.Serializer):
     class Meta:
         model = Schedule
         fields = (
