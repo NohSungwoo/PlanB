@@ -15,7 +15,7 @@ urlpatterns = [
         CalendarDetailView.as_view(),
         name="calendar",
     ),
-    path("calendar", CalendarListView.as_view(), name="calendars"),
+    path("", CalendarListView.as_view(), name="calendars"),
     path("schedule", ScheduleListView.as_view(), name="schedules"),
     path(
         "schedule/<int:schedule_id>", ScheduleDetailView.as_view(), name="schedule"
