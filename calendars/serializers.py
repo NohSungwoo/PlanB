@@ -17,16 +17,46 @@ class CalendarCreateSerializer(s.Serializer):
     pass
 
 
-class ScheduleSerializer(s.Serializer):
+class ScheduleDetailSerializer(s.ModelSerializer):
     class Meta:
         model = Schedule
         fields = (
             "calendar",
             "memo",
             "title",
-            "startdate",
+            "start_date",
             "start_time",
             "end_date",
             "end_time",
             "is_repeat",
         )
+
+
+class ScheduleCreateSerializer(s.Serializer):
+    pass
+
+
+class ScheduleUpdateSerializer(s.Serializer):
+    pass
+
+
+class ScheduleDeleteSerializer(s.Serializer):
+    pass
+
+
+class ScheduleSearchSerializer(s.Serializer):
+    pass
+
+
+class ScheduleListSerializer(s.Serializer):
+    pass
+
+
+class ScheduleCopySerializer(s.Serializer):
+    pass
+
+class ScheduleListQuerySerializer(s.Serializer):
+    pass
+
+class ScheduleSearchQuerySerializer(s.Serializer):
+    pass

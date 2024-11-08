@@ -1,4 +1,4 @@
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import status
 from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
@@ -8,6 +8,14 @@ from .serializers import (
     CalendarCreateSerializer,
     CalendarDetailSerializer,
     CalendarListSerializer,
+    ScheduleCreateSerializer,
+    ScheduleDetailSerializer,
+    ScheduleListQuerySerializer,
+    ScheduleSearchQuerySerializer,
+    ScheduleUpdateSerializer,
+    ScheduleCopySerializer,
+    ScheduleSearchSerializer,
+    ScheduleListSerializer,
 )
 
 
@@ -72,3 +80,97 @@ class CalendarCreateView(APIView):
     def post(self, request):
         # Placeholder implementation
         return Response({"message": "Calendar created"}, status=status.HTTP_201_CREATED)
+
+
+class ScheduleCreateView(APIView):
+    @extend_schema(
+        summary="일정 등록",
+        description="새로운 일정을 등록합니다. 이때 새 메모를 동시에 추가할 수도 있습니다.",
+        request=ScheduleCreateSerializer,
+        responses={201: ScheduleDetailSerializer},
+        tags=["Schedules"],
+    )
+    def post(self, request):
+        # Placeholder implementation
+        return Response({"message": "Schedule created"}, status=status.HTTP_201_CREATED)
+
+
+class ScheduleCopyView(APIView):
+    @extend_schema(
+        summary="일정 복사",
+        description="schedule_id의 일정을 복사하여 새로운 일정으로 생성합니다. 이때 메모가 존재하면 메모도 함께 복사합니다.",
+        request=ScheduleCopySerializer,
+        responses={201: ScheduleDetailSerializer},
+        tags=["Schedules"],
+    )
+    def post(self, request, schedule_id):
+        # Placeholder implementation
+        return Response(
+            {"message": f"Copied schedule {schedule_id}"}, status=status.HTTP_201_CREATED
+        )
+
+
+class ScheduleListView(APIView):
+    @extend_schema(
+        summary="일정 조회",
+        description="기간 내의 일정을 조회합니다. 일간 보기, 주간 보기, 월간 보기 기능이 있으며, 날짜를 기준으로 Pagination을 지원합니다. 원하는 캘린더들을 선택하여 요청을 보낼 수 있습니다.",
+        parameters=[
+            ScheduleListQuerySerializer,
+            OpenApiParameter(
+                name="start_date", description="조회 시작 날짜", required=True, type=str
+            ),
+            OpenApiParameter(
+                name="end_date", description="조회 종료 날짜", required=True, type=str
+            ),
+            OpenApiParameter(
+                name="calendar", description="캘린더 필터링", required=False, type=str
+            ),
+        ],
+        responses={200: ScheduleListSerializer},
+        tags=["Schedules"],
+    )
+    def get(self, request):
+        # Placeholder implementation
+        return Response({"message": "List of schedules"}, status=status.HTTP_200_OK)
+
+
+class ScheduleSearchView(APIView):
+    @extend_schema(
+        summary="일정 검색",
+        description="문자열 기반 검색을 수행합니다. Calendar 필터링 옵션을 할 수 있습니다. Tag 옵션을 사용하여 지정된 태그만을 필터링 할 수 있습니다.",
+        parameters=[
+            ScheduleSearchQuerySerializer,
+            OpenApiParameter(name="query", description="검색 문자열", required=True, type=str),
+            OpenApiParameter(name="tag", description="필터링할 태그", required=False, type=str),
+        ],
+        responses={200: ScheduleSearchSerializer},
+        tags=["Schedules"],
+    )
+    def get(self, request):
+        # Placeholder implementation
+        return Response({"message": "Schedule search results"}, status=status.HTTP_200_OK)
+
+
+class ScheduleDeleteView(APIView):
+    @extend_schema(
+        summary="일정 삭제",
+        description="schedule_id path param을 기준으로 일정을 삭제합니다.",
+        responses={204: ScheduleDetailSerializer},
+        tags=["Schedules"],
+    )
+    def delete(self, request, schedule_id):
+        # Placeholder implementation
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ScheduleUpdateView(APIView):
+    @extend_schema(
+        summary="일정 수정",
+        description="schedule_id path param을 기준으로 일정을 수정합니다. 함께 있는 Memo는 메모 수정 API를 호출해야 합니다.",
+        request=ScheduleUpdateSerializer,
+        responses={200: ScheduleDetailSerializer},
+        tags=["Schedules"],
+    )
+    def put(self, request, schedule_id):
+        # Placeholder implementation
+        return Response({"message": f"Updated schedule {schedule_id}"}, status=status.HTTP_200_OK)
