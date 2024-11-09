@@ -28,6 +28,7 @@ app_urls = [
     path("api/v1/calendars/", include("calendars.urls")),
     path("api/v1/todos/", include("todos.urls")),
     path("api/v1/memos/", include("memos.urls")),
+    path("api/v1/tags/", include("tags.urls")),
 ]
 
 schema_urls = [
