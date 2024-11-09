@@ -23,7 +23,7 @@ urlpatterns = [
     ### Memoset
     path("set", MemoSetCreateView.as_view(), name="memoset-create"),
     path("set", MemoSetListView.as_view(), name="memoset-list"),
-    path("set/<int:set_id>", MemoSetDetailView.as_view(), name="memoset-deltail"),
+    path("set/<int:set_id>", MemoSetDetailView.as_view(), name="memoset-detail"),
     path("set/<int:set_id>", MemoSetUpdateView.as_view(), name="memoset-update"),
     path("set/<int:set_id>", MemoSetDeleteView.as_view(), name="memoset-delete"),
 ]
