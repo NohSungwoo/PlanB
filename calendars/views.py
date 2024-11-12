@@ -5,15 +5,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .serializers import (
-    CalendarCreateSerializer,
     CalendarDetailSerializer,
-    CalendarListSerializer,
-    ScheduleCopySerializer,
-    ScheduleCreateSerializer,
     ScheduleDetailSerializer,
-    ScheduleListQuerySerializer,
     ScheduleListSerializer,
-    ScheduleSearchQuerySerializer,
     ScheduleSearchSerializer,
     ScheduleUpdateSerializer,
 )
@@ -23,7 +17,7 @@ class CalendarListView(ListAPIView):
     @extend_schema(
         summary="캘린더 목록 조회",
         description="유저가 등록한 모든 캘린더를 불러옵니다.",
-        responses={200: CalendarListSerializer},
+        responses={200: CalendarDetailSerializer(many=True)},
         tags=["Calendars"],
     )
     def get(self, request):
@@ -34,7 +28,7 @@ class CalendarCreateView(APIView):
     @extend_schema(
         summary="캘린더 생성",
         description="새 캘린더를 생성합니다.",
-        request=CalendarCreateSerializer,
+        request=CalendarDetailSerializer,
         responses={201: CalendarDetailSerializer},
         tags=["Calendars"],
     )
@@ -86,7 +80,7 @@ class ScheduleCreateView(APIView):
     @extend_schema(
         summary="일정 등록",
         description="새로운 일정을 등록합니다. 이때 새 메모를 동시에 추가할 수도 있습니다.",
-        request=ScheduleCreateSerializer,
+        request=ScheduleDetailSerializer,
         responses={201: ScheduleDetailSerializer},
         tags=["Schedules"],
     )
@@ -99,7 +93,6 @@ class ScheduleCopyView(APIView):
     @extend_schema(
         summary="일정 복사",
         description="schedule_id의 일정을 복사하여 새로운 일정으로 생성합니다. 이때 메모가 존재하면 메모도 함께 복사합니다.",
-        request=ScheduleCopySerializer,
         responses={201: ScheduleDetailSerializer},
         tags=["Schedules"],
     )

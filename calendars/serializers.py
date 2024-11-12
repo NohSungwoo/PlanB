@@ -4,32 +4,22 @@ from calendars.models import Calendar, Schedule
 
 
 class CalendarDetailSerializer(s.ModelSerializer):
+    user = s.StringRelatedField()
+
     class Meta:
         model = Calendar
-        fields = ("title",)
-
-
-class CalendarListSerializer(s.Serializer):
-    pass
-
-
-class CalendarCreateSerializer(s.Serializer):
-    pass
+        fields = "__all__"
 
 
 class ScheduleDetailSerializer(s.ModelSerializer):
+    participant = s.SlugRelatedField(slug_field="email", read_only=True, many=True)
+    memo = s.HyperlinkedRelatedField(
+        view_name="memo-detail", read_only=True, allow_null=True
+    )
+
     class Meta:
         model = Schedule
-        fields = (
-            "calendar",
-            "memo",
-            "title",
-            "start_date",
-            "start_time",
-            "end_date",
-            "end_time",
-            "is_repeat",
-        )
+        fields = "__all__"
 
 
 class ScheduleCreateSerializer(s.Serializer):
@@ -49,10 +39,6 @@ class ScheduleSearchSerializer(s.Serializer):
 
 
 class ScheduleListSerializer(s.Serializer):
-    pass
-
-
-class ScheduleCopySerializer(s.Serializer):
     pass
 
 
