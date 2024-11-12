@@ -40,7 +40,7 @@ class SignUp(APIView):
         email = user.email
         domain = request.get_host()
         subject = "PLANA 계정 활성화 이메일 발송 안내"
-        link = f"http://{domain}/activate/{urlsafe_base64_encode(force_bytes(user.pk))}/{token.make_token(user)}"
+        link = f"http://{domain}/activate/{urlsafe_base64_encode(force_bytes(user.pk))}/{account_activation_token.make_token(user)}"
         message = (
             "계정 활성화 링크 주소입니다. \n"
             "아래 링크를 클릭하여 계정을 활성화 하세요. \n"
