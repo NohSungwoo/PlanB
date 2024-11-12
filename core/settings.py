@@ -25,7 +25,7 @@ SECRET_KEY = "django-insecure-e(vw6xfk1ga9q-87j@%4#o6xu$yk1sqqi(6_h$o#6vj#@6#h70
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["chltm.mooo.com", "127.0.0.1"]
+ALLOWED_HOSTS = []
 
 
 # Application definition
@@ -155,3 +155,12 @@ SPECTACULAR_SETTINGS = {
     "VERSION": "0.0.1",
     "SERVE_INCLUDE_SCHEMA": True,
 }
+
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.naver.com"
+EMAIL_HOST_USER = "shtjddn0817@naver.com"
+EMAIL_HOST_PASSWORD = "zx1cv2bn3@@"
+EMAIL_USE_TLS = False
+EMAIL_USE_SSL = True
+EMAIL_PORT = 465
+DEFAULT_FROM_EMAIL = "shtjddn0817@naver.com"
