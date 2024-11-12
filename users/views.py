@@ -110,3 +110,6 @@ class CertifiedEmail(APIView):
             )
 
         return Response({"error": "Invalid link"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
