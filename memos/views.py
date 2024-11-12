@@ -1,16 +1,17 @@
-from rest_framework.views import APIView
-from drf_spectacular.utils import extend_schema, OpenApiParameter
-from rest_framework.response import Response
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
 from .serializers import (
     MemoCreateSerializer,
     MemoDetailSerializer,
-    MemoUpdateSerializer,
     MemoListSerializer,
     MemoSetCreateSerializer,
     MemoSetDetailSerializer,
-    MemoSetUpdateSerializer,
     MemoSetListSerializer,
+    MemoSetUpdateSerializer,
+    MemoUpdateSerializer,
 )
 
 
@@ -37,7 +38,9 @@ class MemoUpdateView(APIView):
     )
     def put(self, request, memo_id):
         # Placeholder implementation
-        return Response({"message": f"Memo {memo_id} updated"}, status=status.HTTP_200_OK)
+        return Response(
+            {"message": f"Memo {memo_id} updated"}, status=status.HTTP_200_OK
+        )
 
 
 class MemoDeleteView(APIView):
@@ -59,13 +62,27 @@ class MemoListView(APIView):
             정렬옵션도 설정할 수 있습니다. View 옵션을 통해 타입, 조회기간, 메모셋을 필터링 할 수 있습니다.",
         parameters=[
             # TODO - MemoListQuerySerializer 구현
-            OpenApiParameter(name="year", description="조회 연도", required=False, type=int),
-            OpenApiParameter(name="month", description="조회 월", required=False, type=int),
-            OpenApiParameter(name="day", description="조회 일", required=False, type=int),
-            OpenApiParameter(name="sort", description="정렬 옵션", required=False, type=str),
-            OpenApiParameter(name="type", description="메모 타입", required=False, type=str),
-            OpenApiParameter(name="memo_set", description="메모셋 필터", required=False, type=str),
-            OpenApiParameter(name="tag", description="태그 필터", required=False, type=str),
+            OpenApiParameter(
+                name="year", description="조회 연도", required=False, type=int
+            ),
+            OpenApiParameter(
+                name="month", description="조회 월", required=False, type=int
+            ),
+            OpenApiParameter(
+                name="day", description="조회 일", required=False, type=int
+            ),
+            OpenApiParameter(
+                name="sort", description="정렬 옵션", required=False, type=str
+            ),
+            OpenApiParameter(
+                name="type", description="메모 타입", required=False, type=str
+            ),
+            OpenApiParameter(
+                name="memo_set", description="메모셋 필터", required=False, type=str
+            ),
+            OpenApiParameter(
+                name="tag", description="태그 필터", required=False, type=str
+            ),
         ],
         responses={200: MemoListSerializer},
         tags=["Memos"],
@@ -84,7 +101,9 @@ class MemoDetailView(APIView):
     )
     def get(self, request, memo_id):
         # Placeholder implementation
-        return Response({"message": f"Details of memo {memo_id}"}, status=status.HTTP_200_OK)
+        return Response(
+            {"message": f"Details of memo {memo_id}"}, status=status.HTTP_200_OK
+        )
 
 
 class MemoSetCreateView(APIView):
@@ -122,7 +141,9 @@ class MemoSetUpdateView(APIView):
     )
     def put(self, request, set_id):
         # Placeholder implementation
-        return Response({"message": f"Memo set {set_id} updated"}, status=status.HTTP_200_OK)
+        return Response(
+            {"message": f"Memo set {set_id} updated"}, status=status.HTTP_200_OK
+        )
 
 
 class MemoSetListView(APIView):
@@ -146,4 +167,6 @@ class MemoSetDetailView(APIView):
     )
     def get(self, request, set_id):
         # Placeholder implementation
-        return Response({"message": f"Details of memo set {set_id}"}, status=status.HTTP_200_OK)
+        return Response(
+            {"message": f"Details of memo set {set_id}"}, status=status.HTTP_200_OK
+        )

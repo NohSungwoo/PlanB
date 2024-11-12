@@ -1,4 +1,4 @@
-from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
 from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
@@ -8,14 +8,14 @@ from .serializers import (
     CalendarCreateSerializer,
     CalendarDetailSerializer,
     CalendarListSerializer,
+    ScheduleCopySerializer,
     ScheduleCreateSerializer,
     ScheduleDetailSerializer,
     ScheduleListQuerySerializer,
-    ScheduleSearchQuerySerializer,
-    ScheduleUpdateSerializer,
-    ScheduleCopySerializer,
-    ScheduleSearchSerializer,
     ScheduleListSerializer,
+    ScheduleSearchQuerySerializer,
+    ScheduleSearchSerializer,
+    ScheduleUpdateSerializer,
 )
 
 
@@ -106,7 +106,8 @@ class ScheduleCopyView(APIView):
     def post(self, request, schedule_id):
         # Placeholder implementation
         return Response(
-            {"message": f"Copied schedule {schedule_id}"}, status=status.HTTP_201_CREATED
+            {"message": f"Copied schedule {schedule_id}"},
+            status=status.HTTP_201_CREATED,
         )
 
 
@@ -140,15 +141,21 @@ class ScheduleSearchView(APIView):
         description="문자열 기반 검색을 수행합니다. Calendar 필터링 옵션을 할 수 있습니다. Tag 옵션을 사용하여 지정된 태그만을 필터링 할 수 있습니다.",
         parameters=[
             # ScheduleSearchQuerySerializer, # TODO - Query Param Serializer
-            OpenApiParameter(name="query", description="검색 문자열", required=True, type=str),
-            OpenApiParameter(name="tag", description="필터링할 태그", required=False, type=str),
+            OpenApiParameter(
+                name="query", description="검색 문자열", required=True, type=str
+            ),
+            OpenApiParameter(
+                name="tag", description="필터링할 태그", required=False, type=str
+            ),
         ],
         responses={200: ScheduleSearchSerializer},
         tags=["Schedules"],
     )
     def get(self, request):
         # Placeholder implementation
-        return Response({"message": "Schedule search results"}, status=status.HTTP_200_OK)
+        return Response(
+            {"message": "Schedule search results"}, status=status.HTTP_200_OK
+        )
 
 
 class ScheduleDetailView(APIView):
@@ -188,4 +195,6 @@ class ScheduleUpdateView(APIView):
     )
     def put(self, request, schedule_id):
         # Placeholder implementation
-        return Response({"message": f"Updated schedule {schedule_id}"}, status=status.HTTP_200_OK)
+        return Response(
+            {"message": f"Updated schedule {schedule_id}"}, status=status.HTTP_200_OK
+        )

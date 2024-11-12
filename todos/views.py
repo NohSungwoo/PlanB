@@ -1,8 +1,8 @@
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
+from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.generics import ListAPIView
 
 from .serializers import (
     SubTodoCreateSerializer,
@@ -54,7 +54,9 @@ class TodoUpdateView(APIView):
     )
     def put(self, request, todo_id):
         # Placeholder implementation
-        return Response({"message": f"Todo {todo_id} updated"}, status=status.HTTP_200_OK)
+        return Response(
+            {"message": f"Todo {todo_id} updated"}, status=status.HTTP_200_OK
+        )
 
 
 class TodoListView(ListAPIView):
@@ -63,12 +65,17 @@ class TodoListView(ListAPIView):
         description="사용자의 Todo 항목을 조회합니다. 이때 todo_set_id와 complete_date, tag를 통해 필터링 할 수 있습니다.",
         parameters=[
             OpenApiParameter(
-                name="todo_set_id", description="필터링할 Todo Set ID", required=False, type=int
+                name="todo_set_id",
+                description="필터링할 Todo Set ID",
+                required=False,
+                type=int,
             ),
             OpenApiParameter(
                 name="complete_date", description="완료 날짜", required=False, type=str
             ),
-            OpenApiParameter(name="tag", description="태그 필터", required=False, type=str),
+            OpenApiParameter(
+                name="tag", description="태그 필터", required=False, type=str
+            ),
         ],
         responses={200: TodoListSerializer},
         tags=["Todos"],
@@ -87,7 +94,9 @@ class TodoDetailView(APIView):
     )
     def get(self, request, todo_id):
         # Placeholder implementation
-        return Response({"message": f"Detail for Todo {todo_id}"}, status=status.HTTP_200_OK)
+        return Response(
+            {"message": f"Detail for Todo {todo_id}"}, status=status.HTTP_200_OK
+        )
 
 
 class TodoStatusUpdateView(APIView):
@@ -116,7 +125,8 @@ class SubTodoCreateView(APIView):
     def post(self, request, todo_id):
         # Placeholder implementation
         return Response(
-            {"message": f"Sub-task created for Todo {todo_id}"}, status=status.HTTP_201_CREATED
+            {"message": f"Sub-task created for Todo {todo_id}"},
+            status=status.HTTP_201_CREATED,
         )
 
 
@@ -171,7 +181,9 @@ class TodoSetUpdateView(APIView):
     )
     def put(self, request, set_id):
         # Placeholder implementation
-        return Response({"message": f"Todo set {set_id} updated"}, status=status.HTTP_200_OK)
+        return Response(
+            {"message": f"Todo set {set_id} updated"}, status=status.HTTP_200_OK
+        )
 
 
 class TodoSetListView(ListAPIView):
@@ -195,4 +207,6 @@ class TodoSetDetailView(APIView):
     )
     def get(self, request, set_id):
         # Placeholder implementation
-        return Response({"message": f"Details of todo set {set_id}"}, status=status.HTTP_200_OK)
+        return Response(
+            {"message": f"Details of todo set {set_id}"}, status=status.HTTP_200_OK
+        )

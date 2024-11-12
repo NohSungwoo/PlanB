@@ -2,15 +2,15 @@ from django.urls import path
 
 from .views import (
     MemoCreateView,
-    MemoListView,
-    MemoDetailView,
-    MemoUpdateView,
     MemoDeleteView,
+    MemoDetailView,
+    MemoListView,
     MemoSetCreateView,
-    MemoSetListView,
-    MemoSetDetailView,
-    MemoSetUpdateView,
     MemoSetDeleteView,
+    MemoSetDetailView,
+    MemoSetListView,
+    MemoSetUpdateView,
+    MemoUpdateView,
 )
 
 urlpatterns = [

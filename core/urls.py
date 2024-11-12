@@ -45,6 +45,10 @@ schema_urls = [
     ),
 ]
 
-urlpatterns = [
-    path("admin/", admin.site.urls),
-] + app_urls + schema_urls
+urlpatterns = (
+    [
+        path("admin/", admin.site.urls),
+    ]
+    + app_urls
+    + schema_urls
+)

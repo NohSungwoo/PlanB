@@ -1,11 +1,12 @@
 from django.urls import path
+
 from .views import (
     TagCreateView,
-    TagLabelView,
     TagDeleteView,
-    TagUpdateView,
-    TagListView,
     TagDetailView,
+    TagLabelView,
+    TagListView,
+    TagUpdateView,
 )
 
 urlpatterns = [
