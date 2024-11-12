@@ -23,12 +23,15 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
 )
 
-urlpatterns = [
-    path("admin/", admin.site.urls),
+app_urls = [
     # path("api/v1/users/", include("users.urls")),
     path("api/v1/calendars/", include("calendars.urls")),
     path("api/v1/todos/", include("todos.urls")),
-    ### API documents
+    path("api/v1/memos/", include("memos.urls")),
+    path("api/v1/tags/", include("tags.urls")),
+]
+
+schema_urls = [
     path("api/v1/schema", SpectacularAPIView.as_view(), name="schema"),
     path(
         "api/v1/schema/swagger-ui/",
@@ -41,3 +44,11 @@ urlpatterns = [
         name="redoc",
     ),
 ]
+
+urlpatterns = (
+    [
+        path("admin/", admin.site.urls),
+    ]
+    + app_urls
+    + schema_urls
+)

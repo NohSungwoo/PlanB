@@ -1,18 +1,19 @@
 from django.urls import path
+
 from .views import (
+    SubTodoCreateView,
+    SubTodoStatusUpdateView,
     TodoCreateView,
     TodoDeleteView,
+    TodoDetailView,
+    TodoListView,
+    TodoSetCreateView,
     TodoSetDeleteView,
     TodoSetDetailView,
     TodoSetListView,
     TodoSetUpdateView,
-    TodoUpdateView,
-    TodoListView,
-    TodoDetailView,
     TodoStatusUpdateView,
-    SubTodoCreateView,
-    SubTodoStatusUpdateView,
-    TodoSetCreateView,
+    TodoUpdateView,
 )
 
 urlpatterns = [
