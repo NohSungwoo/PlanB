@@ -1,3 +1,4 @@
+from datetime import date
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
 from rest_framework.generics import ListAPIView
@@ -7,8 +8,6 @@ from rest_framework.views import APIView
 from .serializers import (
     CalendarDetailSerializer,
     ScheduleDetailSerializer,
-    ScheduleListSerializer,
-    ScheduleSearchSerializer,
     ScheduleUpdateSerializer,
 )
 
@@ -103,18 +102,23 @@ class ScheduleListView(ListAPIView):
         summary="일정 조회",
         description="기간 내의 일정을 조회합니다. 일간 보기, 주간 보기, 월간 보기 기능이 있으며, 날짜를 기준으로 Pagination을 지원합니다. 원하는 캘린더들을 선택하여 요청을 보낼 수 있습니다.",
         parameters=[
-            # ScheduleListQuerySerializer, # TODO - Query Param Serializer
             OpenApiParameter(
-                name="start_date", description="조회 시작 날짜", required=True, type=str
+                name="start_date",
+                description="조회 시작 날짜",
+                required=True,
+                type=date,
             ),
             OpenApiParameter(
-                name="end_date", description="조회 종료 날짜", required=True, type=str
+                name="end_date", description="조회 종료 날짜", required=True, type=date
             ),
             OpenApiParameter(
-                name="calendar", description="캘린더 필터링", required=False, type=str
+                name="calendar",
+                description="캘린더 필터링, ','를 기준으로 분리.",
+                required=False,
+                type=str,
             ),
         ],
-        responses={200: ScheduleListSerializer},
+        responses={200: ScheduleDetailSerializer(many=True)},
         tags=["Schedules"],
     )
     def get(self, request):
@@ -136,17 +140,21 @@ class ScheduleListView(ListAPIView):
 class ScheduleSearchView(APIView):
     @extend_schema(
         summary="일정 검색",
-        description="문자열 기반 검색을 수행합니다. Calendar 필터링 옵션을 할 수 있습니다. Tag 옵션을 사용하여 지정된 태그만을 필터링 할 수 있습니다.",
+        description="문자열 기반 검색을 수행합니다. \
+            Calendar 필터링 옵션을 할 수 있습니다. Tag 옵션을 \
+            사용하여 지정된 태그만을 필터링 할 수 있습니다.",
         parameters=[
-            # ScheduleSearchQuerySerializer, # TODO - Query Param Serializer
             OpenApiParameter(
                 name="query", description="검색 문자열", required=True, type=str
             ),
             OpenApiParameter(
-                name="tag", description="필터링할 태그", required=False, type=str
+                name="tag",
+                description="포함할 태그, ','로 구분",
+                required=False,
+                type=str,
             ),
         ],
-        responses={200: ScheduleSearchSerializer},
+        responses={200: ScheduleDetailSerializer(many=True)},
         tags=["Schedules"],
     )
     def get(self, request):

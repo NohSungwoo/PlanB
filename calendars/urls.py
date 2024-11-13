@@ -4,12 +4,9 @@ from .views import (
     CalendarDetailView,
     CalendarListView,
     ScheduleCopyView,
-    ScheduleCreateView,
-    ScheduleDeleteView,
     ScheduleDetailView,
     ScheduleListView,
     ScheduleSearchView,
-    ScheduleUpdateView,
 )
 
 calendar_urls = [
