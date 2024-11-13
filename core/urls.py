@@ -24,7 +24,7 @@ from drf_spectacular.views import (
 )
 
 app_urls = [
-    # path("api/v1/users/", include("users.urls")),
+    path("api/v1/users/", include("users.urls")),
     path("api/v1/calendars/", include("calendars.urls")),
     path("api/v1/todos/", include("todos.urls")),
     path("api/v1/memos/", include("memos.urls")),
