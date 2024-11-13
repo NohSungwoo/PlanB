@@ -8,5 +8,5 @@ urlpatterns = [
     path("logout/", Logout.as_view()),
     path("certified/email/<str:uid64>/<str:token>/", CertifiedEmail.as_view()),
     path("reset/password/", ResetPassword.as_view()),
-    path("reset/password/<uid64>/<token>/", ResetPassword.as_view()),
+    path("reset/password/<str:uid64>/<str:token>/", ResetPassword.as_view()),
 ]
