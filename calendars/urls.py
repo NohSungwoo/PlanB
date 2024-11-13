@@ -1,7 +1,6 @@
 from django.urls import path
 
 from .views import (
-    CalendarCreateView,
     CalendarDetailView,
     CalendarListView,
     ScheduleCopyView,
@@ -14,13 +13,17 @@ from .views import (
 )
 
 urlpatterns = [
+    ### Calendar 
+
     path(
         "<str:calendar_name>",
         CalendarDetailView.as_view(),
         name="calendar-detail",
     ),
-    path("", CalendarCreateView.as_view(), name="calendar-create"),
     path("", CalendarListView.as_view(), name="calendar-list"),
+
+    ### Schedule
+
     path("schedule", ScheduleCreateView.as_view(), name="schedule-create"),
     path("schedule", ScheduleListView.as_view(), name="schedule-list"),
     path(

@@ -13,7 +13,10 @@ from .serializers import (
 )
 
 
-class CalendarListView(ListAPIView):
+class CalendarListView(APIView):
+    """
+    캘린더들에 대한 작업을 처리합니다. 모든 캘린더를 조회하거나 새 캘린더를 추가합니다.
+    """
     @extend_schema(
         summary="캘린더 목록 조회",
         description="유저가 등록한 모든 캘린더를 불러옵니다.",
@@ -21,10 +24,8 @@ class CalendarListView(ListAPIView):
         tags=["Calendars"],
     )
     def get(self, request):
-        pass
+        return Response({"message": "캘린더 목록 조회완료!"}, status=status.HTTP_200_OK)
 
-
-class CalendarCreateView(APIView):
     @extend_schema(
         summary="캘린더 생성",
         description="새 캘린더를 생성합니다.",
@@ -38,9 +39,13 @@ class CalendarCreateView(APIView):
 
 
 class CalendarDetailView(APIView):
+    """
+    캘린더 하나에 대한 작업을 처리합니다. 속성을 조회할 수 있으며, 업데이트, 삭제가 가능합니다.
+    """
     @extend_schema(
         summary="캘린더 속성 조회",
-        description="스케줄들을 포함하는 캘린더의 속성들을 조회합니다. Calendar: calendar_name, description, timezone, subscription_url",
+        description="스케줄들을 포함하는 캘린더의 속성들을 조회합니다. \
+            Calendar: calendar_name, description, timezone, subscription_url",
         responses={200: CalendarDetailSerializer},
         tags=["Calendars"],
     )
