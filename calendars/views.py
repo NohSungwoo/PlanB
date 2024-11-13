@@ -17,6 +17,7 @@ class CalendarListView(APIView):
     """
     캘린더들에 대한 작업을 처리합니다. 모든 캘린더를 조회하거나 새 캘린더를 추가합니다.
     """
+
     @extend_schema(
         summary="캘린더 목록 조회",
         description="유저가 등록한 모든 캘린더를 불러옵니다.",
@@ -42,6 +43,7 @@ class CalendarDetailView(APIView):
     """
     캘린더 하나에 대한 작업을 처리합니다. 속성을 조회할 수 있으며, 업데이트, 삭제가 가능합니다.
     """
+
     @extend_schema(
         summary="캘린더 속성 조회",
         description="스케줄들을 포함하는 캘린더의 속성들을 조회합니다. \
@@ -79,19 +81,6 @@ class CalendarDetailView(APIView):
     def delete(self, request, calendar_name):
         # Placeholder implementation
         return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-class ScheduleCreateView(APIView):
-    @extend_schema(
-        summary="일정 등록",
-        description="새로운 일정을 등록합니다. 이때 새 메모를 동시에 추가할 수도 있습니다.",
-        request=ScheduleDetailSerializer,
-        responses={201: ScheduleDetailSerializer},
-        tags=["Schedules"],
-    )
-    def post(self, request):
-        # Placeholder implementation
-        return Response({"message": "Schedule created"}, status=status.HTTP_201_CREATED)
 
 
 class ScheduleCopyView(APIView):
@@ -132,6 +121,17 @@ class ScheduleListView(ListAPIView):
         # Placeholder implementation
         return Response({"message": "List of schedules"}, status=status.HTTP_200_OK)
 
+    @extend_schema(
+        summary="일정 등록",
+        description="새로운 일정을 등록합니다. 이때 새 메모를 동시에 추가할 수도 있습니다.",
+        request=ScheduleDetailSerializer,
+        responses={201: ScheduleDetailSerializer},
+        tags=["Schedules"],
+    )
+    def post(self, request):
+        # Placeholder implementation
+        return Response({"message": "Schedule created"}, status=status.HTTP_201_CREATED)
+
 
 class ScheduleSearchView(APIView):
     @extend_schema(
@@ -170,8 +170,6 @@ class ScheduleDetailView(APIView):
             status=status.HTTP_200_OK,
         )
 
-
-class ScheduleDeleteView(APIView):
     @extend_schema(
         summary="일정 삭제",
         description="schedule_id path param을 기준으로 일정을 삭제합니다.",
@@ -182,8 +180,6 @@ class ScheduleDeleteView(APIView):
         # Placeholder implementation
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-
-class ScheduleUpdateView(APIView):
     @extend_schema(
         summary="일정 수정",
         description="schedule_id path param을 기준으로 일정을 수정합니다. 함께 있는 Memo는 메모 수정 API를 호출해야 합니다.",
