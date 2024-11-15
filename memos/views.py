@@ -15,46 +15,6 @@ from .serializers import (
 )
 
 
-class MemoCreateView(APIView):
-    @extend_schema(
-        summary="메모 등록",
-        description="새로운 메모를 등록합니다. 등록시 메모타입 (일반, 캘린더, Todo)를 지정할 수 있습니다. 등록시 MemoSet을 지정할 수 있습니다.",
-        request=MemoCreateSerializer,
-        responses={201: MemoDetailSerializer},
-        tags=["Memos"],
-    )
-    def post(self, request):
-        # Placeholder implementation
-        return Response({"message": "Memo created"}, status=status.HTTP_201_CREATED)
-
-
-class MemoUpdateView(APIView):
-    @extend_schema(
-        summary="메모 수정",
-        description="기존 메모의 내용을 수정합니다. 메모의 내용과 타입, 메모셋의 위치를 변경할 수 있습니다.",
-        request=MemoUpdateSerializer,
-        responses={200: MemoDetailSerializer},
-        tags=["Memos"],
-    )
-    def put(self, request, memo_id):
-        # Placeholder implementation
-        return Response(
-            {"message": f"Memo {memo_id} updated"}, status=status.HTTP_200_OK
-        )
-
-
-class MemoDeleteView(APIView):
-    @extend_schema(
-        summary="메모 삭제",
-        description="특정 메모를 삭제합니다.",
-        responses={204: None},
-        tags=["Memos"],
-    )
-    def delete(self, request, memo_id):
-        # Placeholder implementation
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-
 class MemoListView(APIView):
     @extend_schema(
         summary="메모 조회",
@@ -91,6 +51,17 @@ class MemoListView(APIView):
         # Placeholder implementation
         return Response({"message": "List of memos"}, status=status.HTTP_200_OK)
 
+    @extend_schema(
+        summary="메모 등록",
+        description="새로운 메모를 등록합니다. 등록시 메모타입 (일반, 캘린더, Todo)를 지정할 수 있습니다. 등록시 MemoSet을 지정할 수 있습니다.",
+        request=MemoCreateSerializer,
+        responses={201: MemoDetailSerializer},
+        tags=["Memos"],
+    )
+    def post(self, request):
+        # Placeholder implementation
+        return Response({"message": "Memo created"}, status=status.HTTP_201_CREATED)
+
 
 class MemoDetailView(APIView):
     @extend_schema(
@@ -105,45 +76,28 @@ class MemoDetailView(APIView):
             {"message": f"Details of memo {memo_id}"}, status=status.HTTP_200_OK
         )
 
-
-class MemoSetCreateView(APIView):
     @extend_schema(
-        summary="메모셋 추가",
-        description="새로운 메모셋을 생성합니다.",
-        request=MemoSetCreateSerializer,
-        responses={201: MemoSetDetailSerializer},
-        tags=["MemoSets"],
+        summary="메모 수정",
+        description="기존 메모의 내용을 수정합니다. 메모의 내용과 타입, 메모셋의 위치를 변경할 수 있습니다.",
+        request=MemoUpdateSerializer,
+        responses={200: MemoDetailSerializer},
+        tags=["Memos"],
     )
-    def post(self, request):
-        # Placeholder implementation
-        return Response({"message": "Memo set created"}, status=status.HTTP_201_CREATED)
-
-
-class MemoSetDeleteView(APIView):
-    @extend_schema(
-        summary="메모셋 삭제",
-        description="메모셋을 삭제합니다. Set 삭제시 하위 원소처리 관련 정책 적용",
-        responses={204: None},
-        tags=["MemoSets"],
-    )
-    def delete(self, request, set_id):
-        # Placeholder implementation
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-class MemoSetUpdateView(APIView):
-    @extend_schema(
-        summary="메모셋 수정",
-        description="메모셋을 수정합니다.",
-        request=MemoSetUpdateSerializer,
-        responses={200: MemoSetDetailSerializer},
-        tags=["MemoSets"],
-    )
-    def put(self, request, set_id):
+    def put(self, request, memo_id):
         # Placeholder implementation
         return Response(
-            {"message": f"Memo set {set_id} updated"}, status=status.HTTP_200_OK
+            {"message": f"Memo {memo_id} updated"}, status=status.HTTP_200_OK
         )
+
+    @extend_schema(
+        summary="메모 삭제",
+        description="특정 메모를 삭제합니다.",
+        responses={204: None},
+        tags=["Memos"],
+    )
+    def delete(self, request, memo_id):
+        # Placeholder implementation
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class MemoSetListView(APIView):
@@ -157,6 +111,17 @@ class MemoSetListView(APIView):
         # Placeholder implementation
         return Response({"message": "List of memo sets"}, status=status.HTTP_200_OK)
 
+    @extend_schema(
+        summary="메모셋 추가",
+        description="새로운 메모셋을 생성합니다.",
+        request=MemoSetCreateSerializer,
+        responses={201: MemoSetDetailSerializer},
+        tags=["MemoSets"],
+    )
+    def post(self, request):
+        # Placeholder implementation
+        return Response({"message": "Memo set created"}, status=status.HTTP_201_CREATED)
+
 
 class MemoSetDetailView(APIView):
     @extend_schema(
@@ -169,4 +134,27 @@ class MemoSetDetailView(APIView):
         # Placeholder implementation
         return Response(
             {"message": f"Details of memo set {set_id}"}, status=status.HTTP_200_OK
+        )
+
+    @extend_schema(
+        summary="메모셋 삭제",
+        description="메모셋을 삭제합니다. Set 삭제시 하위 원소처리 관련 정책 적용",
+        responses={204: None},
+        tags=["MemoSets"],
+    )
+    def delete(self, request, set_id):
+        # Placeholder implementation
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @extend_schema(
+        summary="메모셋 수정",
+        description="메모셋을 수정합니다.",
+        request=MemoSetUpdateSerializer,
+        responses={200: MemoSetDetailSerializer},
+        tags=["MemoSets"],
+    )
+    def put(self, request, set_id):
+        # Placeholder implementation
+        return Response(
+            {"message": f"Memo set {set_id} updated"}, status=status.HTTP_200_OK
         )
