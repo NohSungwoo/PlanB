@@ -1,7 +1,12 @@
+from django.core import mail
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
 from rest_framework import status
 from rest_framework.test import APITestCase
 
 from users.models import User
+
+from .tokens import account_activation_token
 
 
 class TestSignUp(APITestCase):
@@ -44,7 +49,7 @@ class TestSignUp(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_serializer_data(self):
-
+        # 데이터 형식이 정확한지 검사
         response = self.client.post(
             self.URL,
             data={
@@ -65,6 +70,28 @@ class TestSignUp(APITestCase):
             data["birthday"],
             ["Date has wrong format. Use one of these formats instead: YYYY-MM-DD."],
         )
+
+    def test_send_mail(self):
+        # 메일 발송 여부 테스트
+        response = self.client.post(
+            self.URL,
+            data={
+                "email": "shtjddn0817@naver.com",
+                "password": "123test",
+                "nickname": "digimon",
+                "gender": "male",
+                "birthday": "1995-08-17",
+            },
+        )
+
+        # 이메일 발송 확인
+        self.assertEqual(len(mail.outbox), 1)  # 한 통의 이메일이 발송되었는지 확인
+        self.assertIn(
+            "shtjddn0817@naver.com", mail.outbox[0].to
+        )  # 수신자가 올바른지 확인
+        self.assertIn(
+            "계정 활성화 링크 주소입니다.", mail.outbox[0].body
+        )  # 이메일 본문 확인
 
 
 class TestLogin(APITestCase):
@@ -106,3 +133,38 @@ class TestLogin(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(data, {"detail": "It's not valid"})
+
+
+class TestCertifiedEmail(APITestCase):
+
+    def setUp(self):
+        # 테스트 사용자 생성
+        self.user = User.objects.create(email="tester@naver.com", birthday="1995-08-17")
+        self.user.set_password("123123")
+        self.user.save()
+
+    def test_certified_email(self):
+        uid64 = urlsafe_base64_encode(force_bytes(self.user.pk))
+        token = account_activation_token.make_token(self.user)
+        url = f"/api/v1/users/certified/email/{uid64}/{token}/"
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_user_is_none(self):
+        # 유저가 존재하지 않는 경우
+        uid64 = urlsafe_base64_encode(force_bytes(2))
+        token = account_activation_token.make_token(self.user)
+        url = f"/api/v1/users/certified/email/{uid64}/{token}/"
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_token_is_invalid(self):
+        # 토큰이 틀린 경우
+        uid64 = urlsafe_base64_encode(force_bytes(self.user.pk))
+        token = account_activation_token.make_token(self.user).join("a")
+        url = f"/api/v1/users/certified/email/{uid64}/{token}/"
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

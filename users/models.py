@@ -15,6 +15,7 @@ class User(AbstractUser, CommonModel):
     birthday = models.DateField()
     photo = models.URLField(null=True)
     google_cal_url = models.URLField(max_length=255, null=True)
+    is_active = models.BooleanField(default=False)
     username = None
     first_name = None
     last_name = None
