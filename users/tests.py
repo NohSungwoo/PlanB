@@ -168,3 +168,89 @@ class TestCertifiedEmail(APITestCase):
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class TestRequestResetPassword(APITestCase):
+
+    URL = "/api/v1/users/request/reset/password/"
+
+    def setUp(self):
+        self.user = User.objects.create(email="tester@naver.com", birthday="1995-08-17")
+        self.user.set_password("123123")
+        self.user.save()
+
+    def test_send_mail(self):
+        response = self.client.post(
+            self.URL,
+            data={"email": self.user.email},
+        )
+        data = response.json()
+
+        self.assertEqual(response.status_code, 201, "Status code isn't 201")
+        self.assertEqual(data["email"], "tester@naver.com")
+
+    def test_missing_email(self):
+        # 이메일이 request data에서 누락된 경우
+        response = self.client.post(self.URL, data={})
+        data = response.json()
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(data, {"detail": "Need email"})
+
+    def test_user_not_found(self):
+        # user가 존재하지 않는경우
+        response = self.client.post(self.URL, data={"email": "nsw@test.com"})
+        data = response.json()
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(data, {"detail": "Email not found"})
+
+
+class TestResetPassword(APITestCase):
+
+    URL = "/api/v1/users/reset/password/"
+
+    def setUp(self):
+        self.user = User.objects.create(email="tester@naver.com", birthday="1995-08-17")
+        self.user.set_password("123123")
+        self.user.save()
+
+    def test_send_email(self):
+        token = account_activation_token.make_token(self.user)
+        uid64 = urlsafe_base64_encode(force_bytes(self.user.pk))
+        response = self.client.post(
+            self.URL, data={"email": "tester@naver.com", "uid64": uid64, "token": token}
+        )
+        data = response.json()
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(data, {"email": "tester@naver.com"})
+
+    def test_missing_data(self):
+        response = self.client.post(self.URL, data={"email": "tester@naver.com"})
+        data = response.json()
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(data, {"detail": "Missing request data"})
+
+    def test_user_is_none(self):
+        token = account_activation_token.make_token(self.user)
+        uid64 = urlsafe_base64_encode(force_bytes(self.user.pk + 1))
+        response = self.client.post(
+            self.URL, data={"email": "tester@naver.com", "uid64": uid64, "token": token}
+        )
+        data = response.json()
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(data, {"detail": "Not found."})
+
+    def test_link_is_valid(self):
+        token = account_activation_token.make_token(self.user).join("a")
+        uid64 = urlsafe_base64_encode(force_bytes(self.user.pk))
+        response = self.client.post(
+            self.URL, data={"email": "tester@naver.com", "uid64": uid64, "token": token}
+        )
+        data = response.json()
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(data, {"error": "Invalid link"})
