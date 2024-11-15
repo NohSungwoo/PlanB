@@ -122,8 +122,15 @@ class ResetPassword(APIView):
     permission_classes = [AllowAny]
     serializer_class = LoginSerializer
 
-    def get(self, request, uid64, token):
-        pk = force_str(urlsafe_base64_decode(uid64))
+    def post(self, request):
+        try:
+            uid64 = request.data["uid64"]
+            token = request.data["token"]
+
+        except KeyError:
+            raise ParseError("Missing request data")
+
+        pk = urlsafe_base64_decode(uid64)
         user = User.objects.filter(pk=pk).first()
 
         if user is None:
@@ -151,6 +158,12 @@ class ResetPassword(APIView):
             )
 
         return Response({"error": "Invalid link"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class RequestPasswordReset(APIView):
+
+    permission_classes = [AllowAny]
+    serializer_class = LoginSerializer
 
     def post(self, request):
         try:

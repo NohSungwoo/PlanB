@@ -170,19 +170,20 @@ class TestCertifiedEmail(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
-class TestResetPassword(APITestCase):
+class TestRequestResetPassword(APITestCase):
+
+    URL = "/api/v1/users/request/reset/password/"
+
     def setUp(self):
         self.user = User.objects.create(email="tester@naver.com", birthday="1995-08-17")
         self.user.set_password("123123")
         self.user.save()
 
     def test_send_mail(self):
-        url = "/api/v1/users/reset/password/"
         response = self.client.post(
-            url,
+            self.URL,
             data={"email": self.user.email},
         )
-
         data = response.json()
 
         self.assertEqual(response.status_code, 201, "Status code isn't 201")
@@ -190,8 +191,7 @@ class TestResetPassword(APITestCase):
 
     def test_missing_email(self):
         # 이메일이 request data에서 누락된 경우
-        url = "/api/v1/users/reset/password/"
-        response = self.client.post(self.url)
+        response = self.client.post(self.URL, data={})
         data = response.json()
 
         self.assertEqual(response.status_code, 400)
@@ -199,36 +199,57 @@ class TestResetPassword(APITestCase):
 
     def test_user_not_found(self):
         # user가 존재하지 않는경우
-        url = "/api/v1/users/reset/password/"
-        response = self.client.post(url, data={"email": "nsw@test.com"})
+        response = self.client.post(self.URL, data={"email": "nsw@test.com"})
         data = response.json()
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertEqual(data, {"detail": "Email not found"})
 
-        uid64 = urlsafe_base64_encode(force_bytes(self.user.pk + 1))
+
+class TestResetPassword(APITestCase):
+
+    URL = "/api/v1/users/reset/password/"
+
+    def setUp(self):
+        self.user = User.objects.create(email="tester@naver.com", birthday="1995-08-17")
+        self.user.set_password("123123")
+        self.user.save()
+
+    def test_send_email(self):
         token = account_activation_token.make_token(self.user)
-        url = f"/api/v1/users/reset/password/{uid64}/{token}/"
-        response = self.client.get(url)
-        data = response.json()
-
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-
-    def test_send_new_password(self):
         uid64 = urlsafe_base64_encode(force_bytes(self.user.pk))
-        token = account_activation_token.make_token(self.user)
-        url = f"/api/v1/users/reset/password/{uid64}/{token}/"
-        response = self.client.get(url)
+        response = self.client.post(
+            self.URL, data={"email": "tester@naver.com", "uid64": uid64, "token": token}
+        )
         data = response.json()
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(data, {"email": "tester@naver.com"})
 
-    def test_token_invalid(self):
-        uid64 = urlsafe_base64_encode(force_bytes(self.user.pk))
+    def test_missing_data(self):
+        response = self.client.post(self.URL, data={"email": "tester@naver.com"})
+        data = response.json()
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(data, {"detail": "Missing request data"})
+
+    def test_user_is_none(self):
+        token = account_activation_token.make_token(self.user)
+        uid64 = urlsafe_base64_encode(force_bytes(self.user.pk + 1))
+        response = self.client.post(
+            self.URL, data={"email": "tester@naver.com", "uid64": uid64, "token": token}
+        )
+        data = response.json()
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(data, {"detail": "Not found."})
+
+    def test_link_is_valid(self):
         token = account_activation_token.make_token(self.user).join("a")
-        url = f"/api/v1/users/reset/password/{uid64}/{token}/"
-        response = self.client.get(url)
+        uid64 = urlsafe_base64_encode(force_bytes(self.user.pk))
+        response = self.client.post(
+            self.URL, data={"email": "tester@naver.com", "uid64": uid64, "token": token}
+        )
         data = response.json()
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
