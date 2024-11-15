@@ -1,3 +1,5 @@
+from random import randint
+
 from django.contrib.auth import authenticate, login, logout
 from django.core.mail import send_mail
 from django.utils.encoding import force_bytes, force_str
@@ -92,7 +94,7 @@ class Logout(APIView):
 class CertifiedEmail(APIView):
 
     permission_classes = [AllowAny]
-    serializer_class = UserSerializer
+    serializer_class = LoginSerializer
 
     def get(self, request, uid64, token):
         pk = force_str(urlsafe_base64_decode(uid64))  # id값을 반환
@@ -105,11 +107,88 @@ class CertifiedEmail(APIView):
             user.is_active = True
             user.save()
 
+            serializer = self.serializer_class(user)
+
             return Response(
-                {"detail": f"{user.email} is activated"}, status=status.HTTP_200_OK
+                serializer.data,
+                status=status.HTTP_200_OK,
             )
 
         return Response({"error": "Invalid link"}, status=status.HTTP_400_BAD_REQUEST)
 
 
+class ResetPassword(APIView):
 
+    permission_classes = [AllowAny]
+    serializer_class = LoginSerializer
+
+    def post(self, request):
+        try:
+            uid64 = request.data["uid64"]
+            token = request.data["token"]
+
+        except KeyError:
+            raise ParseError("Missing request data")
+
+        pk = urlsafe_base64_decode(uid64)
+        user = User.objects.filter(pk=pk).first()
+
+        if user is None:
+            raise NotFound
+
+        if user and account_activation_token.check_token(user, token):
+            new_password = str(randint(100000, 999999))
+            user.set_password(new_password)
+            user.save()
+
+            subject = "PLANA 새로운 비밀번호 안내"
+            message = (
+                "새로운 비밀번호입니다. 비밀번호를 변경해주세요. \n"
+                f"{new_password}"
+                "감사합니다."
+            )
+
+            send_mail(subject, message, "shtjddn0817@naver.com", [user.email])
+
+            serializer = self.serializer_class(user)
+
+            return Response(
+                serializer.data,
+                status=status.HTTP_200_OK,
+            )
+
+        return Response({"error": "Invalid link"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class RequestPasswordReset(APIView):
+
+    permission_classes = [AllowAny]
+    serializer_class = LoginSerializer
+
+    def post(self, request):
+        try:
+            email = request.data["email"]
+
+        except KeyError:
+            raise ParseError("Need email")
+
+        user = User.objects.filter(email=email).first()
+
+        if user is None:
+            raise NotFound("Email not found")
+
+        domain = request.get_host()
+        subject = "PLANA 비밀번호 초기화 이메일 발송 안내"
+        link = f"http://{domain}/activate/{urlsafe_base64_encode(force_bytes(user.pk))}/{account_activation_token.make_token(user)}"
+        message = (
+            "계정 비밀번호 재설정 링크 주소입니다. \n"
+            "아래 링크를 클릭하여 비밀번호를 초기화 하세요. \n"
+            f"{link}\n"
+            "감사합니다."
+        )
+
+        serializer = self.serializer_class(user)
+
+        send_mail(subject, message, "shtjddn0817@naver.com", [email])
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
