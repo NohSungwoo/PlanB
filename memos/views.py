@@ -3,10 +3,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .serializers import (
-    MemoDetailSerializer,
-    MemoSetDetailSerializer,
-)
+from .serializers import MemoDetailSerializer, MemoSetDetailSerializer
 
 
 class MemoListView(APIView):
@@ -31,7 +28,10 @@ class MemoListView(APIView):
                 name="type", description="메모 타입", required=False, type=str
             ),
             OpenApiParameter(
-                name="memo_set", description="메모셋 필터, CSV", required=False, type=str
+                name="memo_set",
+                description="메모셋 필터, CSV",
+                required=False,
+                type=str,
             ),
             OpenApiParameter(
                 name="tag", description="태그 필터, CSV", required=False, type=str

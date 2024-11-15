@@ -1,5 +1,6 @@
-from rest_framework import serializers as s
 from django.contrib.auth import get_user_model
+from rest_framework import serializers as s
+
 from calendars.models import Calendar, Schedule
 
 User = get_user_model()
