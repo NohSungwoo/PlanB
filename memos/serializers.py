@@ -1,41 +1,22 @@
+from django.contrib.auth import get_user_model
 from rest_framework import serializers as s
 
+from memos.models import Memo, MemoSet
 
-class MemoCreateSerializer(s.Serializer):
-    pass
-
-
-class MemoListSerializer(s.Serializer):
-    pass
+User = get_user_model()
 
 
-class MemoDetailSerializer(s.Serializer):
-    pass
+class MemoDetailSerializer(s.ModelSerializer):
+    memo_set = s.StringRelatedField()
+
+    class Meta:
+        model = Memo
+        fields = "__all__"
 
 
-class MemoUpdateSerializer(s.Serializer):
-    pass
+class MemoSetDetailSerializer(s.ModelSerializer):
+    user = s.StringRelatedField()
 
-
-class MemoDeleteSerializer(s.Serializer):
-    pass
-
-
-class MemoSetCreateSerializer(s.Serializer):
-    pass
-
-
-class MemoSetListSerializer(s.Serializer):
-    pass
-
-
-class MemoSetDetailSerializer(s.Serializer):
-    pass
-
-
-class MemoSetUpdateSerializer(s.Serializer):
-    pass
-
-
-class MemoSetDeleteSerializer(s.Serializer):
-    pass
+    class Meta:
+        model = MemoSet
+        fields = "__all__"
