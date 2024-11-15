@@ -3,24 +3,15 @@ from django.urls import path
 from .views import (
     SubTodoCreateView,
     SubTodoStatusUpdateView,
-    TodoCreateView,
-    TodoDeleteView,
     TodoDetailView,
     TodoListView,
-    TodoSetCreateView,
-    TodoSetDeleteView,
     TodoSetDetailView,
     TodoSetListView,
-    TodoSetUpdateView,
     TodoStatusUpdateView,
-    TodoUpdateView,
 )
 
-urlpatterns = [
-    path("", TodoCreateView.as_view(), name="todo-create"),
+todo_urls = [
     path("", TodoListView.as_view(), name="todo-list"),
-    path("<int:todo_id>", TodoDeleteView.as_view(), name="todo-delete"),
-    path("<int:todo_id>", TodoUpdateView.as_view(), name="todo-update"),
     path("<int:todo_id>", TodoDetailView.as_view(), name="todo-detail"),
     path(
         "<int:todo_id>/status",
@@ -33,9 +24,11 @@ urlpatterns = [
         SubTodoStatusUpdateView.as_view(),
         name="sub-todo-status-update",
     ),
-    path("set", TodoSetCreateView.as_view(), name="todo-set-create"),
-    path("set/<int:set_id>", TodoSetDeleteView.as_view(), name="todo-set-delete"),
-    path("set/<int:set_id>", TodoSetUpdateView.as_view(), name="todo-set-update"),
+]
+
+todoset_urls = [
     path("set", TodoSetListView.as_view(), name="todo-set-list"),
     path("set/<int:set_id>", TodoSetDetailView.as_view(), name="todo-set-detail"),
 ]
+
+urlpatterns = todo_urls + todoset_urls
