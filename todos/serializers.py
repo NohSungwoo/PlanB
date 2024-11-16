@@ -1,33 +1,36 @@
 from rest_framework import serializers as s
 
-
-class TodoDetailSerializer(s.Serializer):
-    pass
+from todos.models import SubTodo, Todo, TodoSet
 
 
-class TodoListSerializer(s.Serializer):
-    pass
+class TodoSetDetailSerializer(s.ModelSerializer):
+    user = s.StringRelatedField()
+
+    class Meta:
+        model = TodoSet
+        fields = "__all__"
 
 
-class TodoStatusUpdateSerializer(s.Serializer):
-    pass
+class SubTodoDetailSerializer(s.ModelSerializer):
+    todo = s.PrimaryKeyRelatedField(read_only=True)
+
+    class Meta:
+        model = SubTodo
+        fields = "__all__"
 
 
-class SubTodoStatusUpdateSerialize(s.Serializer):
-    pass
+class TodoDetailSerializer(s.ModelSerializer):
+    todo_set = s.StringRelatedField()
+    memo = s.StringRelatedField()
+    todo_sub = SubTodoDetailSerializer(many=True, read_only=True)
 
-
-class SubTodoStatusUpdateSerializer(s.Serializer):
-    pass
-
-
-class TodoSetDetailSerializer(s.Serializer):
-    pass
-
-
-class TodoSetListSerializer(s.Serializer):
-    pass
-
-
-class SubTodoDetailSerializer(s.Serializer):
-    pass
+    class Meta:
+        model = Todo
+        fields = (
+            "todo_set",
+            "memo",
+            "title",
+            "start_date",
+            "complete_date",
+            "todo_sub",  # reverse relationship
+        )

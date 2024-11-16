@@ -6,11 +6,8 @@ from rest_framework.views import APIView
 
 from .serializers import (
     SubTodoDetailSerializer,
-    SubTodoStatusUpdateSerializer,
     TodoDetailSerializer,
     TodoSetDetailSerializer,
-    TodoSetListSerializer,
-    TodoStatusUpdateSerializer,
 )
 
 
@@ -91,8 +88,10 @@ class TodoDetailView(APIView):
 class TodoStatusUpdateView(APIView):
     @extend_schema(
         summary="Todo 상태 변경",
-        description="특정 Todo항목의 상태를 변경합니다.",
-        request=TodoStatusUpdateSerializer,
+        description="특정 Todo항목의 상태를 변경합니다. \
+            PATCH 메서드이기 때문에 멱등성이 성립하지 않습니다. \
+            같은 요청을 보낼 때마다 status가 on-off 사이를 왔다갔다 합니다. \
+            하위 태스크 영향 관련 결정은 노션 문서를 참고하세요.",
         responses={200: TodoDetailSerializer},
         tags=["Todos"],
     )
@@ -122,8 +121,10 @@ class SubTodoCreateView(APIView):
 class SubTodoStatusUpdateView(APIView):
     @extend_schema(
         summary="Todo 하위 태스크 상태 변경",
-        description="하위 태스크의 상태를 변경합니다.",
-        request=SubTodoStatusUpdateSerializer,
+        description="특정 Todo항목의 상태를 변경합니다. \
+            PATCH 메서드이기 때문에 멱등성이 성립하지 않습니다. \
+            같은 요청을 보낼 때마다 status가 on-off 사이를 왔다갔다 합니다. \
+            하위 태스크 영향 관련 결정은 노션 문서를 참고하세요.",
         responses={200: SubTodoDetailSerializer},
         tags=["Todos"],
     )
@@ -175,11 +176,11 @@ class TodoSetUpdateView(APIView):
         )
 
 
-class TodoSetListView(ListAPIView):
+class TodoSetListView(APIView):
     @extend_schema(
         summary="투두셋 조회",
         description="투두셋을 조회합니다.",
-        responses={200: TodoSetListSerializer(many=True)},
+        responses={200: TodoSetDetailSerializer(many=True)},
         tags=["TodoSets"],
     )
     def get(self, request):
