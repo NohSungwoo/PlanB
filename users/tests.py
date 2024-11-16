@@ -312,3 +312,14 @@ class TestProfile(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(data, {"gender": ['"1" is not a valid choice.']})
+
+    def test_delete_success(self):
+        pk = self.user.pk
+        self.client.force_authenticate(user=self.user)
+        response = self.client.delete(self.URL)
+
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+        user = User.objects.filter(pk=pk).first()
+
+        self.assertIsNone(user)
