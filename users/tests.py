@@ -287,23 +287,14 @@ class TestProfile(APITestCase):
         self.assertEqual(data, serializer.data)
 
     def test_permission_denied(self):
-        # Get 요청이 Denied 가 되는지 확인
-        response = self.client.get(self.URL)
-        data = response.json()
+        for method in (self.client.get, self.client.put, self.client.delete):
+            response = method(self.URL)
+            data = response.json()
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertEqual(
-            data, {"detail": "Authentication credentials were not provided."}
-        )
-
-        # Put 요청도 Denied 가 되는지 확인
-        response = self.client.put(self.URL)
-        data = response.json()
-
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertEqual(
-            data, {"detail": "Authentication credentials were not provided."}
-        )
+            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+            self.assertEqual(
+                data, {"detail": "Authentication credentials were not provided."}
+            )
 
     def test_data_invalid(self):
         self.client.force_authenticate(user=self.user)
