@@ -4,6 +4,7 @@ from users.views import (
     CertifiedEmail,
     Login,
     Logout,
+    Profile,
     RequestPasswordReset,
     ResetPassword,
     SignUp,
@@ -16,4 +17,5 @@ urlpatterns = [
     path("certified/email/<str:uid64>/<str:token>/", CertifiedEmail.as_view()),
     path("reset/password/", ResetPassword.as_view()),
     path("request/reset/password/", RequestPasswordReset.as_view()),
+    path("profile/", Profile.as_view()),
 ]

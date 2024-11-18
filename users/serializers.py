@@ -19,3 +19,21 @@ class LoginSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ("email", "password")
+
+
+class ProfileSerializer(serializers.ModelSerializer):
+
+    password = serializers.CharField(write_only=True)
+    email = serializers.CharField(read_only=True)
+
+    class Meta:
+        model = User
+        fields = (
+            "email",
+            "password",
+            "nickname",
+            "gender",
+            "birthday",
+            "photo",
+            "created_at",
+        )

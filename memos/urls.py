@@ -1,11 +1,6 @@
 from django.urls import path
 
-from .views import (
-    MemoDetailView,
-    MemoListView,
-    MemoSetDetailView,
-    MemoSetListView,
-)
+from .views import MemoDetailView, MemoListView, MemoSetDetailView, MemoSetListView
 
 memo_urls = [
     path("", MemoListView.as_view(), name="memo-list"),

@@ -11,7 +11,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from users.models import User
-from users.serializers import LoginSerializer, UserSerializer
+from users.serializers import LoginSerializer, ProfileSerializer, UserSerializer
 
 from .tokens import account_activation_token
 
@@ -192,3 +192,37 @@ class RequestPasswordReset(APIView):
         send_mail(subject, message, "shtjddn0817@naver.com", [email])
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class Profile(APIView):
+
+    permission_classes = [IsAuthenticated]
+    serializer_class = ProfileSerializer
+
+    def get(self, request):
+        profile = request.user
+
+        serializer = self.serializer_class(profile)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def put(self, request):
+        profile = request.user
+
+        serializer = ProfileSerializer(profile, data=request.data, partial=True)
+
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        profile = serializer.save()
+
+        serializer = ProfileSerializer(profile)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def delete(self, request):
+        user = request.user
+
+        user.delete()
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
