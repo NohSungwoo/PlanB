@@ -4,11 +4,13 @@ from django.contrib.auth import authenticate, login, logout
 from django.core.mail import send_mail
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
+from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.exceptions import NotFound, ParseError
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from users.models import User
 from users.serializers import LoginSerializer, ProfileSerializer, UserSerializer
@@ -60,6 +62,7 @@ class Login(APIView):
     permission_classes = [AllowAny]
     serializer_class = LoginSerializer
 
+    @extend_schema(tags=["Users"])
     def post(self, request):
         try:
             email = request.data["email"]
@@ -77,9 +80,17 @@ class Login(APIView):
 
         login(request, user)
 
-        serializer = self.serializer_class(user)
+        refresh_token = RefreshToken.for_user(user)
+        access_token = refresh_token.access_token
 
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(
+            {
+                "email": user.email,
+                "refresh": str(refresh_token),
+                "access": str(access_token),
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 class Logout(APIView):

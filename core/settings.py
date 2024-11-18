@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
+from datetime import timedelta
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -136,6 +137,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "users.User"
 
 REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ],
     "DEFAULT_RENDERER_CLASSES": [
         "rest_framework.renderers.JSONRenderer",
         "rest_framework.renderers.BrowsableAPIRenderer",
@@ -154,6 +158,13 @@ SPECTACULAR_SETTINGS = {
     "DESCRIPTION": "A Schedule Integrator",
     "VERSION": "0.0.1",
     "SERVE_INCLUDE_SCHEMA": True,
+}
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(hours=1),  # Access Token 만료 시간
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),  # Refresh Token 만료 시간
+    "ROTATE_REFRESH_TOKENS": True,  # Refresh Token 갱신 시 새로운 토큰 발급
+    "BLACKLIST_AFTER_ROTATION": True,  # 사용된 Refresh Token 블랙리스트 처리
 }
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"

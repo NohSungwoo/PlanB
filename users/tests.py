@@ -1,3 +1,5 @@
+from http.client import responses
+
 from django.core import mail
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
@@ -100,8 +102,9 @@ class TestLogin(APITestCase):
     URL = "/api/v1/users/login/"
 
     def setUp(self):
-        user = User.objects.create(email="tester@naver.com", birthday="1995-08-17")
-        user.set_password("123123")
+        user = User.objects.create_superuser(
+            email="tester@naver.com", password="123123", birthday="1995-08-17"
+        )
         user.save()
 
     def test_login(self):
@@ -116,6 +119,13 @@ class TestLogin(APITestCase):
             response.status_code, status.HTTP_200_OK, {"login data invalid"}
         )
         self.assertEqual(data["email"], "tester@naver.com", "email value error")
+
+    def test_login_returns_jwt_token(self):
+        response = self.client.post(
+            "/api/token/", {"email": "tester@naver.com", "password": "123123"}
+        )
+        data = response.json()
+        print(data)
 
     def test_missing_data(self):
         # 값이 누락된 경우
@@ -291,7 +301,7 @@ class TestProfile(APITestCase):
             response = method(self.URL)
             data = response.json()
 
-            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+            self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
             self.assertEqual(
                 data, {"detail": "Authentication credentials were not provided."}
             )
