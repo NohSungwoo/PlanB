@@ -1,5 +1,6 @@
 from rest_framework import serializers as s
 
+from memos.serializers import MemoDetailSerializer
 from todos.models import SubTodo, Todo, TodoSet
 
 
@@ -13,15 +14,23 @@ class TodoSetDetailSerializer(s.ModelSerializer):
 
 class SubTodoDetailSerializer(s.ModelSerializer):
     todo = s.PrimaryKeyRelatedField(read_only=True)
+    memo = MemoDetailSerializer()
 
     class Meta:
         model = SubTodo
-        fields = "__all__"
+        fields = (
+            "id",
+            "todo",
+            "memo",
+            "title",
+            "start_date",
+            "complete_date",
+        )
 
 
 class TodoDetailSerializer(s.ModelSerializer):
-    todo_set = s.StringRelatedField()
-    memo = s.StringRelatedField()
+    todo_set = s.PrimaryKeyRelatedField(read_only=True)
+    memo = MemoDetailSerializer()
     todo_sub = SubTodoDetailSerializer(many=True, read_only=True)
 
     class Meta:
@@ -32,5 +41,5 @@ class TodoDetailSerializer(s.ModelSerializer):
             "title",
             "start_date",
             "complete_date",
-            "todo_sub",  # reverse relationship
+            "todo_sub",  # reverse relationship see todos/models.py
         )
