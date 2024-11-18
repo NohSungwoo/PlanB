@@ -14,7 +14,8 @@ class TodoSetDetailSerializer(s.ModelSerializer):
 
 class SubTodoDetailSerializer(s.ModelSerializer):
     todo = s.PrimaryKeyRelatedField(read_only=True)
-    memo = MemoDetailSerializer()
+    memo = MemoDetailSerializer(required=False)
+    complete_date = s.DateTimeField(allow_null=True, read_only=True)
 
     class Meta:
         model = SubTodo
@@ -32,10 +33,12 @@ class TodoDetailSerializer(s.ModelSerializer):
     todo_set = s.PrimaryKeyRelatedField(read_only=True)
     memo = MemoDetailSerializer()
     todo_sub = SubTodoDetailSerializer(many=True, read_only=True)
+    complete_date = s.DateTimeField(allow_null=True, read_only=True)
 
     class Meta:
         model = Todo
         fields = (
+            "id",
             "todo_set",
             "memo",
             "title",
