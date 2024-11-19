@@ -1,49 +1,48 @@
 from rest_framework import serializers as s
 
-
-class TodoCreateSerializer(s.Serializer):
-    pass
-
-
-class TodoDetailSerializer(s.Serializer):
-    pass
+from memos.serializers import MemoDetailSerializer
+from todos.models import SubTodo, Todo, TodoSet
 
 
-class TodoUpdateSerializer(s.Serializer):
-    pass
+class TodoSetDetailSerializer(s.ModelSerializer):
+    user = s.StringRelatedField()
+
+    class Meta:
+        model = TodoSet
+        fields = "__all__"
 
 
-class TodoListSerializer(s.Serializer):
-    pass
+class SubTodoDetailSerializer(s.ModelSerializer):
+    todo = s.PrimaryKeyRelatedField(read_only=True)
+    memo = MemoDetailSerializer(required=False)
+    complete_date = s.DateTimeField(allow_null=True, read_only=True)
+
+    class Meta:
+        model = SubTodo
+        fields = (
+            "id",
+            "todo",
+            "memo",
+            "title",
+            "start_date",
+            "complete_date",
+        )
 
 
-class TodoStatusUpdateSerializer(s.Serializer):
-    pass
+class TodoDetailSerializer(s.ModelSerializer):
+    todo_set = s.PrimaryKeyRelatedField(read_only=True)
+    memo = MemoDetailSerializer()
+    todo_sub = SubTodoDetailSerializer(many=True, read_only=True)
+    complete_date = s.DateTimeField(allow_null=True, read_only=True)
 
-
-class SubTodoCreateSerializer(s.Serializer):
-    pass
-
-
-class SubTodoStatusUpdateSerialize(s.Serializer):
-    pass
-
-
-class SubTodoStatusUpdateSerializer(s.Serializer):
-    pass
-
-
-class TodoSetCreateSerializer(s.Serializer):
-    pass
-
-
-class TodoSetDetailSerializer(s.Serializer):
-    pass
-
-
-class TodoSetUpdateSerializer(s.Serializer):
-    pass
-
-
-class TodoSetListSerializer(s.Serializer):
-    pass
+    class Meta:
+        model = Todo
+        fields = (
+            "id",
+            "todo_set",
+            "memo",
+            "title",
+            "start_date",
+            "complete_date",
+            "todo_sub",  # reverse relationship see todos/models.py
+        )

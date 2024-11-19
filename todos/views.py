@@ -5,58 +5,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .serializers import (
-    SubTodoCreateSerializer,
-    SubTodoStatusUpdateSerializer,
-    TodoCreateSerializer,
+    SubTodoDetailSerializer,
     TodoDetailSerializer,
-    TodoListSerializer,
-    TodoSetCreateSerializer,
     TodoSetDetailSerializer,
-    TodoSetListSerializer,
-    TodoSetUpdateSerializer,
-    TodoStatusUpdateSerializer,
-    TodoUpdateSerializer,
 )
-
-
-class TodoCreateView(APIView):
-    @extend_schema(
-        summary="Todo 등록",
-        description="새로운 Todo 항목을 생성합니다. 이때 todo_set을 지정해야합니다. 지정하지 않으면 default TodoSet으로 할당됩니다.",
-        request=TodoCreateSerializer,
-        responses={201: TodoDetailSerializer},
-        tags=["Todos"],
-    )
-    def post(self, request):
-        # Placeholder implementation
-        return Response({"message": "Todo created"}, status=status.HTTP_201_CREATED)
-
-
-class TodoDeleteView(APIView):
-    @extend_schema(
-        summary="Todo 삭제",
-        description="todoId를 기준으로 Todo를 삭제합니다.",
-        responses={204: None},
-        tags=["Todos"],
-    )
-    def delete(self, request, todo_id):
-        # Placeholder implementation
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-class TodoUpdateView(APIView):
-    @extend_schema(
-        summary="Todo 수정",
-        description="todoId를 기준으로 세부 내용을 수정합니다.",
-        request=TodoUpdateSerializer,
-        responses={200: TodoDetailSerializer},
-        tags=["Todos"],
-    )
-    def put(self, request, todo_id):
-        # Placeholder implementation
-        return Response(
-            {"message": f"Todo {todo_id} updated"}, status=status.HTTP_200_OK
-        )
 
 
 class TodoListView(ListAPIView):
@@ -77,12 +29,23 @@ class TodoListView(ListAPIView):
                 name="tag", description="태그 필터", required=False, type=str
             ),
         ],
-        responses={200: TodoListSerializer},
+        responses={200: TodoDetailSerializer(many=True)},
         tags=["Todos"],
     )
     def get(self, request):
         # Placeholder implementation
         return Response({"message": "List of todos"}, status=status.HTTP_200_OK)
+
+    @extend_schema(
+        summary="Todo 등록",
+        description="새로운 Todo 항목을 생성합니다. 이때 todo_set을 지정해야합니다. 지정하지 않으면 default TodoSet으로 할당됩니다.",
+        request=TodoDetailSerializer,
+        responses={201: TodoDetailSerializer},
+        tags=["Todos"],
+    )
+    def post(self, request):
+        # Placeholder implementation
+        return Response({"message": "Todo created"}, status=status.HTTP_201_CREATED)
 
 
 class TodoDetailView(APIView):
@@ -98,12 +61,37 @@ class TodoDetailView(APIView):
             {"message": f"Detail for Todo {todo_id}"}, status=status.HTTP_200_OK
         )
 
+    @extend_schema(
+        summary="Todo 삭제",
+        description="todoId를 기준으로 Todo를 삭제합니다.",
+        responses={204: TodoDetailSerializer},
+        tags=["Todos"],
+    )
+    def delete(self, request, todo_id):
+        # Placeholder implementation
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @extend_schema(
+        summary="Todo 수정",
+        description="todoId를 기준으로 세부 내용을 수정합니다.",
+        request=TodoDetailSerializer,
+        responses={200: TodoDetailSerializer},
+        tags=["Todos"],
+    )
+    def put(self, request, todo_id):
+        # Placeholder implementation
+        return Response(
+            {"message": f"Todo {todo_id} updated"}, status=status.HTTP_200_OK
+        )
+
 
 class TodoStatusUpdateView(APIView):
     @extend_schema(
         summary="Todo 상태 변경",
-        description="특정 Todo항목의 상태를 변경합니다.",
-        request=TodoStatusUpdateSerializer,
+        description="특정 Todo항목의 상태를 변경합니다. \
+            PATCH 메서드이기 때문에 멱등성이 성립하지 않습니다. \
+            같은 요청을 보낼 때마다 status가 on-off 사이를 왔다갔다 합니다. \
+            하위 태스크 영향 관련 결정은 노션 문서를 참고하세요.",
         responses={200: TodoDetailSerializer},
         tags=["Todos"],
     )
@@ -118,8 +106,8 @@ class SubTodoCreateView(APIView):
     @extend_schema(
         summary="Todo 하위 태스크 등록",
         description="특정 Todo항목에 하위 태스크를 추가합니다.",
-        request=SubTodoCreateSerializer,
-        responses={201: TodoDetailSerializer},
+        request=SubTodoDetailSerializer,
+        responses={201: SubTodoDetailSerializer},
         tags=["Todos"],
     )
     def post(self, request, todo_id):
@@ -133,9 +121,11 @@ class SubTodoCreateView(APIView):
 class SubTodoStatusUpdateView(APIView):
     @extend_schema(
         summary="Todo 하위 태스크 상태 변경",
-        description="하위 태스크의 상태를 변경합니다.",
-        request=SubTodoStatusUpdateSerializer,
-        responses={200: TodoDetailSerializer},
+        description="특정 Todo항목의 상태를 변경합니다. \
+            PATCH 메서드이기 때문에 멱등성이 성립하지 않습니다. \
+            같은 요청을 보낼 때마다 status가 on-off 사이를 왔다갔다 합니다. \
+            하위 태스크 영향 관련 결정은 노션 문서를 참고하세요.",
+        responses={200: SubTodoDetailSerializer},
         tags=["Todos"],
     )
     def put(self, request, todo_id, sub_todo_id):
@@ -150,7 +140,7 @@ class TodoSetCreateView(APIView):
     @extend_schema(
         summary="투두셋 추가",
         description="새로운 투두셋을 생성합니다.",
-        request=TodoSetCreateSerializer,
+        request=TodoSetDetailSerializer,
         responses={201: TodoSetDetailSerializer},
         tags=["TodoSets"],
     )
@@ -175,7 +165,7 @@ class TodoSetUpdateView(APIView):
     @extend_schema(
         summary="투두셋 수정",
         description="투두셋을 수정합니다.",
-        request=TodoSetUpdateSerializer,
+        request=TodoSetDetailSerializer,
         responses={200: TodoSetDetailSerializer},
         tags=["TodoSets"],
     )
@@ -186,11 +176,11 @@ class TodoSetUpdateView(APIView):
         )
 
 
-class TodoSetListView(ListAPIView):
+class TodoSetListView(APIView):
     @extend_schema(
         summary="투두셋 조회",
         description="투두셋을 조회합니다.",
-        responses={200: TodoSetListSerializer},
+        responses={200: TodoSetDetailSerializer(many=True)},
         tags=["TodoSets"],
     )
     def get(self, request):
