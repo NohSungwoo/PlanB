@@ -22,6 +22,17 @@ from drf_spectacular.views import (
     SpectacularRedocView,
     SpectacularSwaggerView,
 )
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+    TokenVerifyView,
+)
+
+jwt_urls = [
+    path("api/token/", TokenObtainPairView.as_view()),  # 로그인
+    path("api/token/refresh/", TokenRefreshView.as_view()),  # 토큰 갱신
+    path("api/token/verify/", TokenVerifyView.as_view()),  # 토큰 검증
+]
 
 app_urls = [
     path("api/v1/users/", include("users.urls")),
@@ -49,6 +60,7 @@ urlpatterns = (
     [
         path("admin/", admin.site.urls),
     ]
+    + jwt_urls
     + app_urls
     + schema_urls
 )

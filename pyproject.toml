@@ -15,6 +15,7 @@ isort = "^5.13.2"
 djangorestframework = "^3.15.2"
 drf-spectacular = "^0.27.2"
 drf-spectacular-sidecar = "^2024.11.1"
+djangorestframework-simplejwt = "^5.3.1"
 
 [tool.isort]
 profile = "black"
