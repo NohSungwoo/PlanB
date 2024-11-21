@@ -5,7 +5,7 @@ from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 from rest_framework import status
 from rest_framework.test import APITestCase
-from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
+from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 
 from users.models import User
 
@@ -309,7 +309,6 @@ class TestProfile(APITestCase):
 
         for method in (self.client.get, self.client.put, self.client.delete):
             response = method(self.URL)
-            data = response.json()
 
             self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
