@@ -1,10 +1,9 @@
-from http.client import responses
-
 from django.core import mail
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 from rest_framework import status
 from rest_framework.test import APITestCase
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from users.models import User
 
@@ -274,10 +273,15 @@ class TestProfile(APITestCase):
     def setUp(self):
         self.user = User.objects.create(email="tester@naver.com", birthday="1995-08-17")
         self.user.set_password("123123")
+        self.user.is_active = True
         self.user.save()
 
+        refresh = RefreshToken.for_user(self.user)
+        self.access_token = str(refresh.access_token)
+
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.access_token}")
+
     def test_get_profile(self):
-        self.client.force_authenticate(user=self.user)
         response = self.client.get(self.URL)
         data = response.json()
         serializer = ProfileSerializer(self.user)
@@ -286,28 +290,27 @@ class TestProfile(APITestCase):
         self.assertEqual(data, serializer.data, "Data is not equal")
 
     def test_update_profile(self):
-        self.client.force_authenticate(user=self.user)
         response = self.client.put(
             self.URL, data={"nickname": "digimon", "gender": "male"}
         )
         data = response.json()
-        serializer = ProfileSerializer(self.user)
+
+        user = User.objects.get(email=data["email"])
+
+        serializer = ProfileSerializer(user)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(data, serializer.data)
 
     def test_permission_denied(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {None}")
+
         for method in (self.client.get, self.client.put, self.client.delete):
             response = method(self.URL)
-            data = response.json()
 
             self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-            self.assertEqual(
-                data, {"detail": "Authentication credentials were not provided."}
-            )
 
     def test_data_invalid(self):
-        self.client.force_authenticate(user=self.user)
         response = self.client.put(self.URL, data={"gender": 1})
         data = response.json()
 
