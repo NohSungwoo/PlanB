@@ -1,35 +1,16 @@
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, OpenApiParameter as P, OpenApiTypes
 from rest_framework import status
 from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .serializers import (
-    TagCreateSerializer,
-    TagDetailSerializer,
-    TagLabelSerializer,
-    TagListSerializer,
-    TagUpdateSerializer,
-)
-
-
-class TagCreateView(APIView):
-    @extend_schema(
-        summary="태그 추가",
-        description="새로운 태그를 생성하여 메모, 투두, 캘린더 항목에 사용할 수 있도록 합니다.",
-        request=TagCreateSerializer,
-        responses={201: TagDetailSerializer},
-        tags=["Tags"],
-    )
-    def post(self, request):
-        # Placeholder implementation
-        return Response({"message": "Tag created"}, status=status.HTTP_201_CREATED)
+from .serializers import TagDetailSerializer, TagLabelSerializer, TagTitleSerializer
 
 
 class TagLabelView(APIView):
     @extend_schema(
-        summary="태그 라벨링",
-        description="태그를 라벨링합니다. 라벨링이란, 메모, 투두, 캘린더 아이디를 참조하는 것을 의미합니다.",
+        summary="태그 라벨 추가",
+        description="태그를 라벨링을 합니다. 라벨링이란, 메모, 투두, 캘린더 아이디를 참조하는 것을 의미합니다.",
         request=TagLabelSerializer,
         responses={200: TagDetailSerializer},
         tags=["Tags"],
@@ -38,24 +19,40 @@ class TagLabelView(APIView):
         # Placeholder implementation
         return Response({"message": f"Tag {tag_id} labeled"}, status=status.HTTP_200_OK)
 
-
-class TagDeleteView(APIView):
     @extend_schema(
-        summary="태그 삭제",
-        description="특정 태그를 삭제합니다.",
-        responses={204: None},
-        tags=["Tags"],
+        summary="태그 라벨 제거",
+        description="태그 라벨을 제거합니다. 이때 Query Param으로 제거할 엔티티 ID를 명시해야 합니다.\
+            만일 제시한 ID가 현재 태그 라벨에 연관되지 않는다면 404 Not found를 반환합니다.",
+        parameters=[ 
+            P("schedule", type=OpenApiTypes.INT, location=P.QUERY),
+            P("memo", type=OpenApiTypes.INT, location=P.QUERY),
+            P("todo", type=OpenApiTypes.INT, location=P.QUERY),
+         ],
+         responses={204: TagDetailSerializer},
+         tags=["Tags"],
     )
     def delete(self, request, tag_id):
         # Placeholder implementation
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(
+            {"message": f"Tag {tag_id} unlabeled"}, status=status.HTTP_204_NO_CONTENT
+        )
 
 
-class TagUpdateView(APIView):
+class TagListView(ListAPIView):
+    @extend_schema(
+        summary="태그 조회",
+        description="유저가 생성한 모든 태그를 조회합니다.",
+        responses={200: TagDetailSerializer(many=True)},
+        tags=["Tags"],
+    )
+    def get(self, request):
+        # Placeholder implementation
+        return Response({"message": "List of tags"}, status=status.HTTP_200_OK)
+
     @extend_schema(
         summary="태그 이름 변경",
         description="태그 이름을 변경합니다.",
-        request=TagUpdateSerializer,
+        request=TagTitleSerializer,
         responses={200: TagDetailSerializer},
         tags=["Tags"],
     )
@@ -63,17 +60,18 @@ class TagUpdateView(APIView):
         # Placeholder implementation
         return Response({"message": f"Tag {tag_id} updated"}, status=status.HTTP_200_OK)
 
-
-class TagListView(ListAPIView):
     @extend_schema(
-        summary="태그 조회",
-        description="유저가 생성한 모든 태그를 조회합니다.",
-        responses={200: TagListSerializer},
+        summary="태그 추가",
+        description="새로운 태그를 생성하여 메모, 투두, 캘린더 항목에 사용할 수 있도록 합니다.\
+                태그 생성은 단순히 title을 사용하여 생성이 가능하며, 다른 엔티티와 연결하기 \
+                위해서 **태그 라벨링**을 요청해야 합니다.",
+        request=TagTitleSerializer,
+        responses={201: TagDetailSerializer},
         tags=["Tags"],
     )
-    def get(self, request):
+    def post(self, request):
         # Placeholder implementation
-        return Response({"message": "List of tags"}, status=status.HTTP_200_OK)
+        return Response({"message": "Tag created"}, status=status.HTTP_201_CREATED)
 
 
 class TagDetailView(APIView):
@@ -88,3 +86,13 @@ class TagDetailView(APIView):
         return Response(
             {"message": f"Details of tag {tag_id}"}, status=status.HTTP_200_OK
         )
+
+    @extend_schema(
+        summary="태그 삭제",
+        description="특정 태그를 삭제합니다.",
+        responses={204: TagDetailSerializer},
+        tags=["Tags"],
+    )
+    def delete(self, request, tag_id):
+        # Placeholder implementation
+        return Response(status=status.HTTP_204_NO_CONTENT)

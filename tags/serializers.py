@@ -1,21 +1,37 @@
 from rest_framework import serializers as s
 
-
-class TagCreateSerializer(s.Serializer):
-    pass
-
-
-class TagDetailSerializer(s.Serializer):
-    pass
+from calendars.models import Schedule
+from memos.models import Memo
+from tags.models import Tag
+from todos.models import Todo
 
 
-class TagLabelSerializer(s.Serializer):
-    pass
+class TagDetailSerializer(s.ModelSerializer):
+    user = s.StringRelatedField()
+    schedule = s.PrimaryKeyRelatedField(many=True, read_only=True)
+    memo = s.PrimaryKeyRelatedField(many=True, read_only=True)
+    todo = s.PrimaryKeyRelatedField(many=True, read_only=True)
+
+    class Meta:
+        model = Tag
+        fields = "__all__"
 
 
-class TagUpdateSerializer(s.Serializer):
-    pass
+class TagLabelSerializer(s.ModelSerializer):
+    todo = s.PrimaryKeyRelatedField(queryset=Todo.objects.all(), many=True)
+    memo = s.PrimaryKeyRelatedField(queryset=Memo.objects.all(), many=True)
+    schedule = s.PrimaryKeyRelatedField(queryset=Schedule.objects.all(), many=True)
+
+    class Meta:
+        model = Tag
+        fields = (
+            "todo",
+            "memo",
+            "schedule",
+        )
 
 
-class TagListSerializer(s.Serializer):
-    pass
+class TagTitleSerializer(s.ModelSerializer):
+    class Meta:
+        model = Tag
+        fields = ("title",)
