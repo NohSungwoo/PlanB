@@ -1,9 +1,12 @@
-from drf_spectacular.utils import extend_schema, OpenApiParameter as P, OpenApiTypes
+from drf_spectacular.utils import OpenApiParameter as P
+from drf_spectacular.utils import OpenApiTypes, extend_schema
 from rest_framework import status
-from rest_framework.generics import ListAPIView
+from rest_framework.exceptions import ParseError
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from .models import Tag
 from .serializers import TagDetailSerializer, TagLabelSerializer, TagTitleSerializer
 
 
@@ -16,20 +19,20 @@ class TagLabelView(APIView):
         tags=["Tags"],
     )
     def post(self, request, tag_id):
-        # Placeholder implementation
+
         return Response({"message": f"Tag {tag_id} labeled"}, status=status.HTTP_200_OK)
 
     @extend_schema(
         summary="태그 라벨 제거",
         description="태그 라벨을 제거합니다. 이때 Query Param으로 제거할 엔티티 ID를 명시해야 합니다.\
             만일 제시한 ID가 현재 태그 라벨에 연관되지 않는다면 404 Not found를 반환합니다.",
-        parameters=[ 
+        parameters=[
             P("schedule", type=OpenApiTypes.INT, location=P.QUERY),
             P("memo", type=OpenApiTypes.INT, location=P.QUERY),
             P("todo", type=OpenApiTypes.INT, location=P.QUERY),
-         ],
-         responses={204: TagDetailSerializer},
-         tags=["Tags"],
+        ],
+        responses={204: TagDetailSerializer},
+        tags=["Tags"],
     )
     def delete(self, request, tag_id):
         # Placeholder implementation
@@ -38,7 +41,11 @@ class TagLabelView(APIView):
         )
 
 
-class TagListView(ListAPIView):
+class TagListView(APIView):
+
+    permission_classes = [IsAuthenticated]
+    serializer_class = TagDetailSerializer
+
     @extend_schema(
         summary="태그 조회",
         description="유저가 생성한 모든 태그를 조회합니다.",
@@ -46,19 +53,13 @@ class TagListView(ListAPIView):
         tags=["Tags"],
     )
     def get(self, request):
-        # Placeholder implementation
-        return Response({"message": "List of tags"}, status=status.HTTP_200_OK)
+        user = request.user
 
-    @extend_schema(
-        summary="태그 이름 변경",
-        description="태그 이름을 변경합니다.",
-        request=TagTitleSerializer,
-        responses={200: TagDetailSerializer},
-        tags=["Tags"],
-    )
-    def put(self, request, tag_id):
-        # Placeholder implementation
-        return Response({"message": f"Tag {tag_id} updated"}, status=status.HTTP_200_OK)
+        tags = Tag.objects.filter(user=user)
+
+        serializer = self.serializer_class(tags, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(
         summary="태그 추가",
@@ -70,8 +71,23 @@ class TagListView(ListAPIView):
         tags=["Tags"],
     )
     def post(self, request):
-        # Placeholder implementation
-        return Response({"message": "Tag created"}, status=status.HTTP_201_CREATED)
+        try:
+            user_pk = request.user.pk
+            title = request.data["title"]
+
+        except KeyError:
+            raise ParseError("Field title invalid")
+
+        serializer = self.serializer_class(data={"user": user_pk, "title": title})
+
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        tag = serializer.save()
+
+        serializer = self.serializer_class(tag)
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class TagDetailView(APIView):
@@ -86,6 +102,17 @@ class TagDetailView(APIView):
         return Response(
             {"message": f"Details of tag {tag_id}"}, status=status.HTTP_200_OK
         )
+
+    @extend_schema(
+        summary="태그 이름 변경",
+        description="태그 이름을 변경합니다.",
+        request=TagTitleSerializer,
+        responses={200: TagDetailSerializer},
+        tags=["Tags"],
+    )
+    def put(self, request, tag_id):
+        # Placeholder implementation
+        return Response({"message": f"Tag {tag_id} updated"}, status=status.HTTP_200_OK)
 
     @extend_schema(
         summary="태그 삭제",
