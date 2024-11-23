@@ -20,7 +20,7 @@ class Todo(CommonModel):
         "todos.TodoSet", on_delete=models.CASCADE, related_name="set_todo"
     )
     memo = models.OneToOneField(
-        "memos.Memo", on_delete=models.CASCADE, related_name="memo_todo"
+        "memos.Memo", on_delete=models.CASCADE, related_name="memo_todo", null=True
     )
     title = models.CharField(max_length=50)
     start_date = models.DateTimeField()
