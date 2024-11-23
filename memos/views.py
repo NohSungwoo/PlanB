@@ -1,7 +1,7 @@
 from django.core.serializers import serialize
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -168,10 +168,10 @@ class MemoSetDetailView(APIView):
         queryset = self.queryset.filter(user=request.user, id=set_id)
         if not queryset.exists():
             raise NotFound(detail="해당 메모셋이 존재하지 않습니다.")
-        
+
         found = queryset.first()
         found.delete()
-        
+
         serializer = self.serializer_class(found)
         return Response(serializer.data, status=status.HTTP_204_NO_CONTENT)
 
@@ -183,7 +183,17 @@ class MemoSetDetailView(APIView):
         tags=["MemoSets"],
     )
     def put(self, request, set_id):
-        # Placeholder implementation
-        return Response(
-            {"message": f"Memo set {set_id} updated"}, status=status.HTTP_200_OK
+        instance = self.queryset.get(user=request.user, id=set_id)
+        if not instance:
+            raise NotFound(detail="해당 메모셋이 존재하지 않습니다.")
+
+        serializer = self.serializer_class(
+            instance, data=request.data, partial=True, context={"request": request}
         )
+
+        if not serializer.is_valid():
+            raise ValidationError(serializer.errors)
+
+        updated_instance = serializer.save()
+        serializer = self.serializer_class(updated_instance)
+        return Response(serializer.data, status=status.HTTP_200_OK)

@@ -31,7 +31,14 @@ class MemoSetDetailSerializer(s.ModelSerializer):
 
         if MemoSet.objects.filter(user=user, title=title).exists():
             raise s.ValidationError(
-                {"title": f"해당 유저에 타이틀 {title}이 이미 존재합니다."}
+                {"title": f"해당 유저에 타이틀 '{title}'이 이미 존재합니다."}
             )
 
         return data
+
+    def update(self, instance, validated_data):
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        
+        instance.save()
+        return instance
