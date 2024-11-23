@@ -1,5 +1,7 @@
+from django.core.serializers import serialize
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
+from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -137,6 +139,11 @@ class MemoSetListView(APIView):
 
 
 class MemoSetDetailView(APIView):
+
+    permission_classes = [IsAuthenticated]
+    serializer_class = MemoSetDetailSerializer
+    queryset = MemoSet.objects.all()
+
     @extend_schema(
         summary="메모셋 디테일 조회",
         description="메모셋의 세부 정보를 조회합니다.",
@@ -144,10 +151,12 @@ class MemoSetDetailView(APIView):
         tags=["MemoSets"],
     )
     def get(self, request, set_id):
-        # Placeholder implementation
-        return Response(
-            {"message": f"Details of memo set {set_id}"}, status=status.HTTP_200_OK
-        )
+        queryset = self.queryset.filter(user=request.user, id=set_id)
+        if not queryset.exists():
+            raise NotFound(detail="해당 메모셋이 존재하지 않습니다.")
+
+        serializer = self.serializer_class(queryset.first())
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(
         summary="메모셋 삭제",
