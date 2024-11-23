@@ -1,6 +1,5 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers as s
-from rest_framework.validators import UniqueTogetherValidator
 
 from memos.models import Memo, MemoSet
 
@@ -31,8 +30,8 @@ class MemoSetDetailSerializer(s.ModelSerializer):
         title = data.get("title")
 
         if MemoSet.objects.filter(user=user, title=title).exists():
-            raise s.ValidationError({
-                "message": f"해당 유저에 타이틀 {title}이 이미 존재합니다."
-            })
-        
+            raise s.ValidationError(
+                {"title": f"해당 유저에 타이틀 {title}이 이미 존재합니다."}
+            )
+
         return data
