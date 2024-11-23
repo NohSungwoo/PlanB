@@ -1,12 +1,20 @@
+from django.core.serializers import serialize
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
+from rest_framework.exceptions import NotFound, ValidationError
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+from memos.models import MemoSet
 
 from .serializers import MemoDetailSerializer, MemoSetDetailSerializer
 
 
 class MemoListView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
     @extend_schema(
         summary="메모 조회",
         description="날짜와 분류 기준으로 메모를 조회합니다. 연도, 월, 일 단위로 조회할 수 있으며, \
@@ -94,6 +102,11 @@ class MemoDetailView(APIView):
 
 
 class MemoSetListView(APIView):
+
+    permission_classes = [IsAuthenticated]
+    serializer_class = MemoSetDetailSerializer
+    queryset = MemoSet.objects.all()
+
     @extend_schema(
         summary="메모셋 조회",
         description="메모셋을 조회합니다.",
@@ -101,8 +114,10 @@ class MemoSetListView(APIView):
         tags=["MemoSets"],
     )
     def get(self, request):
-        # Placeholder implementation
-        return Response({"message": "List of memo sets"}, status=status.HTTP_200_OK)
+        queryset = self.queryset.filter(user=request.user)
+        serializer = self.serializer_class(queryset, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(
         summary="메모셋 추가",
@@ -112,11 +127,23 @@ class MemoSetListView(APIView):
         tags=["MemoSets"],
     )
     def post(self, request):
-        # Placeholder implementation
-        return Response({"message": "Memo set created"}, status=status.HTTP_201_CREATED)
+        serializer = self.serializer_class(
+            data=request.data, context={"request": request}
+        )
+
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer.save(user=request.user)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class MemoSetDetailView(APIView):
+
+    permission_classes = [IsAuthenticated]
+    serializer_class = MemoSetDetailSerializer
+    queryset = MemoSet.objects.all()
+
     @extend_schema(
         summary="메모셋 디테일 조회",
         description="메모셋의 세부 정보를 조회합니다.",
@@ -124,10 +151,12 @@ class MemoSetDetailView(APIView):
         tags=["MemoSets"],
     )
     def get(self, request, set_id):
-        # Placeholder implementation
-        return Response(
-            {"message": f"Details of memo set {set_id}"}, status=status.HTTP_200_OK
-        )
+        queryset = self.queryset.filter(user=request.user, id=set_id)
+        if not queryset.exists():
+            raise NotFound(detail="해당 메모셋이 존재하지 않습니다.")
+
+        serializer = self.serializer_class(queryset.first())
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(
         summary="메모셋 삭제",
@@ -136,8 +165,15 @@ class MemoSetDetailView(APIView):
         tags=["MemoSets"],
     )
     def delete(self, request, set_id):
-        # Placeholder implementation
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        queryset = self.queryset.filter(user=request.user, id=set_id)
+        if not queryset.exists():
+            raise NotFound(detail="해당 메모셋이 존재하지 않습니다.")
+
+        found = queryset.first()
+        found.delete()
+
+        serializer = self.serializer_class(found)
+        return Response(serializer.data, status=status.HTTP_204_NO_CONTENT)
 
     @extend_schema(
         summary="메모셋 수정",
@@ -147,7 +183,17 @@ class MemoSetDetailView(APIView):
         tags=["MemoSets"],
     )
     def put(self, request, set_id):
-        # Placeholder implementation
-        return Response(
-            {"message": f"Memo set {set_id} updated"}, status=status.HTTP_200_OK
+        instance = self.queryset.get(user=request.user, id=set_id)
+        if not instance:
+            raise NotFound(detail="해당 메모셋이 존재하지 않습니다.")
+
+        serializer = self.serializer_class(
+            instance, data=request.data, partial=True, context={"request": request}
         )
+
+        if not serializer.is_valid():
+            raise ValidationError(serializer.errors)
+
+        updated_instance = serializer.save()
+        serializer = self.serializer_class(updated_instance)
+        return Response(serializer.data, status=status.HTTP_200_OK)
