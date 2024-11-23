@@ -11,7 +11,6 @@ class TagDetailSerializer(s.ModelSerializer):
     memo = s.PrimaryKeyRelatedField(many=True, read_only=True)
     todo = s.PrimaryKeyRelatedField(many=True, read_only=True)
 
-
     class Meta:
         model = Tag
         exclude = ("created_at", "updated_at")

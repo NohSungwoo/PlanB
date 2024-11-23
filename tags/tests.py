@@ -1,4 +1,5 @@
 from rest_framework import status
+from rest_framework.status import HTTP_200_OK, HTTP_404_NOT_FOUND
 from rest_framework.test import APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -48,3 +49,37 @@ class TestTagListView(APITestCase):
         data = response.json()
 
         self.assertEqual(data, {"title": ["tag with this title already exists."]})
+
+
+class TestTagDetailView(APITestCase):
+
+    URL = "/api/v1/tags/1"
+
+    def setUp(self):
+        self.user = User.objects.create(email="test@tester.com", birthday="1995-08-17")
+        self.user.set_password("123123")
+        self.user.is_active = True
+        self.user.save()
+
+        refresh = RefreshToken.for_user(self.user)
+        self.access_token = str(refresh.access_token)
+
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.access_token}")
+
+    def test_get_tag_detail(self):
+        tag = Tag.objects.create(title="test", user=self.user)
+
+        response = self.client.get(self.URL)
+        data = response.json()
+
+        serializer = TagDetailSerializer(tag)
+
+        self.assertEqual(response.status_code, HTTP_200_OK)
+        self.assertEqual(data, serializer.data)
+
+    def test_tag_not_found(self):
+        response = self.client.get(self.URL)
+        data = response.json()
+
+        self.assertEqual(response.status_code, HTTP_404_NOT_FOUND)
+        self.assertEqual(data, {"detail": "Not found."})

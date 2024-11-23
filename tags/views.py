@@ -1,7 +1,7 @@
 from drf_spectacular.utils import OpenApiParameter as P
 from drf_spectacular.utils import OpenApiTypes, extend_schema
 from rest_framework import status
-from rest_framework.exceptions import ParseError
+from rest_framework.exceptions import NotFound, ParseError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -76,7 +76,7 @@ class TagListView(APIView):
             title = request.data["title"]
 
         except KeyError:
-            raise ParseError("Field title invalid")
+            raise ParseError("Need title data")
 
         serializer = self.serializer_class(data={"user": user_pk, "title": title})
 
@@ -91,6 +91,19 @@ class TagListView(APIView):
 
 
 class TagDetailView(APIView):
+
+    permission_classes = [IsAuthenticated]
+    serializer_class = TagDetailSerializer
+
+    def get_object(self, tag_id):
+        try:
+            tag = Tag.objects.get(pk=tag_id)
+
+        except Tag.DoesNotExist:
+            raise NotFound
+
+        return tag
+
     @extend_schema(
         summary="태그 디테일 조회",
         description="유저가 생성한 태그의 detail을 조회합니다.",
@@ -98,10 +111,11 @@ class TagDetailView(APIView):
         tags=["Tags"],
     )
     def get(self, request, tag_id):
-        # Placeholder implementation
-        return Response(
-            {"message": f"Details of tag {tag_id}"}, status=status.HTTP_200_OK
-        )
+        tag = self.get_object(tag_id)
+
+        serializer = self.serializer_class(tag)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(
         summary="태그 이름 변경",
