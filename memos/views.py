@@ -165,8 +165,15 @@ class MemoSetDetailView(APIView):
         tags=["MemoSets"],
     )
     def delete(self, request, set_id):
-        # Placeholder implementation
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        queryset = self.queryset.filter(user=request.user, id=set_id)
+        if not queryset.exists():
+            raise NotFound(detail="해당 메모셋이 존재하지 않습니다.")
+        
+        found = queryset.first()
+        found.delete()
+        
+        serializer = self.serializer_class(found)
+        return Response(serializer.data, status=status.HTTP_204_NO_CONTENT)
 
     @extend_schema(
         summary="메모셋 수정",
