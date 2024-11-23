@@ -89,7 +89,7 @@ class TestMemoSetDetail(TestAuthBase):
 
     def test_get_memoset_not_found(self):
         """Test fetching a MemoSet that does not exist"""
-        url = f"/api/v1/memosets/999/"
+        url = f"{self.URL}/999"
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
@@ -117,6 +117,6 @@ class TestMemoSetDetail(TestAuthBase):
 
     def test_delete_memoset_not_found(self):
         """Test deleting a MemoSet that does not exist"""
-        url = f"/api/v1/memosets/999/"
+        url = f"{self.URL}/999"
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
