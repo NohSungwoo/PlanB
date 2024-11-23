@@ -1,3 +1,5 @@
+from http.client import responses
+
 from rest_framework import status
 from rest_framework.status import HTTP_200_OK, HTTP_404_NOT_FOUND
 from rest_framework.test import APITestCase
@@ -83,3 +85,33 @@ class TestTagDetailView(APITestCase):
 
         self.assertEqual(response.status_code, HTTP_404_NOT_FOUND)
         self.assertEqual(data, {"detail": "Not found."})
+
+    def test_tag_update(self):
+        Tag.objects.create(user=self.user, title="title")
+        response = self.client.put(self.URL, data={"title": "update_title"})
+        data = response.json()
+
+        tag = Tag.objects.get(title="update_title")
+        serializer = TagDetailSerializer(tag)
+
+        self.assertEqual(response.status_code, HTTP_200_OK)
+        self.assertEqual(data, serializer.data)
+
+    def test_tag_update_duplication_value(self):
+        Tag.objects.create(user=self.user, title="title")
+        Tag.objects.create(user=self.user, title="duplicate_title")
+        response = self.client.put(self.URL, data={"title": "duplicate_title"})
+        data = response.json()
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(data, {"title": ["tag with this title already exists."]})
+
+    def test_tag_delete(self):
+        Tag.objects.create(user=self.user, title="title")
+        response = self.client.delete(self.URL)
+
+        try:
+            Tag.objects.get(pk=1)
+
+        except Tag.DoesNotExist:
+            self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)

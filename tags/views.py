@@ -125,8 +125,18 @@ class TagDetailView(APIView):
         tags=["Tags"],
     )
     def put(self, request, tag_id):
-        # Placeholder implementation
-        return Response({"message": f"Tag {tag_id} updated"}, status=status.HTTP_200_OK)
+        tag = self.get_object(tag_id)
+
+        serializer = self.serializer_class(tag, data=request.data, partial=True)
+
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        tag = serializer.save()
+
+        serializer = self.serializer_class(tag)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(
         summary="태그 삭제",
@@ -135,5 +145,8 @@ class TagDetailView(APIView):
         tags=["Tags"],
     )
     def delete(self, request, tag_id):
-        # Placeholder implementation
+        tag = self.get_object(tag_id)
+
+        tag.delete()
+
         return Response(status=status.HTTP_204_NO_CONTENT)
