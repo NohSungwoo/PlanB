@@ -45,6 +45,44 @@ class TestMemoList(TestAuthBase):
 
         self.assertEqual(Memo.objects.count(), 2)
 
+    def test_create_memo_with_none_existent_schedule(self):
+        """Test creating a new Memo will fail when non-existing schedule id is provided"""
+        # Providing a non-existing schedule id (assuming ID 999 does not exist)
+        payload = {
+            "title": "Test Memo with Invalid Schedule",
+            "text": "Text for memo",
+            "memo_set": 1,  # Valid memo_set id
+            "memo_schedule": 999,  # Assuming 999 is a non-existent schedule id
+        }
+        response = self.client.post(self.URL, payload)
+
+        # Check that the response status code is 400 Bad Request
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        # Check that the error message indicates the schedule does not exist
+        self.assertIn(
+            "memo_schedule", response.data
+        )  # Assuming the error is returned in this field
+
+    def test_create_memo_with_none_existent_todo(self):
+        """Test creating a new Memo will fail when non-existing todo id is provided"""
+        # Providing a non-existing todo id (assuming ID 999 does not exist)
+        payload = {
+            "title": "Test Memo with Invalid Todo",
+            "text": "Text for memo with invalid todo",
+            "memo_set": 1,  # Assuming this is a valid memo_set id
+            "memo_todo": 999,  # Assuming 999 is a non-existent todo id
+        }
+        response = self.client.post(self.URL, payload)
+
+        # Check that the response status code is 400 Bad Request
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        # Check that the error message indicates the todo does not exist
+        self.assertIn(
+            "memo_todo", response.data
+        )  # Assuming the error is returned in this field
+
     def test_create_memo_with_schedule(self):
         # TODO - Implement
         pass
