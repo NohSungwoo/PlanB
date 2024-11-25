@@ -25,24 +25,6 @@ class MemoDetailSerializer(s.ModelSerializer):
             "memo_todo",
         )
 
-    def validate_memo_schedule(self, schedule_id: int) -> int:
-        """
-        Field Level Validation, null일 경우 실행되지 않습니다.
-        """
-        if not Schedule.objects.exists(id=schedule_id):
-            raise s.ValidationError("Schedule이 존재하지 않습니다.")
-
-        return schedule_id
-
-    def validate_memo_todo(self, todo_id: int) -> int:
-        """
-        Field Level Validation, null일 경우 실행되지 않습니다.
-        """
-        if not Todo.objects.exists(id=todo_id):
-            raise s.ValidationError("Todo가 존재하지 않습니다.")
-
-        return todo_id
-
 
 class MemoSetDetailSerializer(s.ModelSerializer):
     user = s.PrimaryKeyRelatedField(read_only=True)
