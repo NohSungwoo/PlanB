@@ -7,20 +7,25 @@ from todos.models import Todo
 
 
 class TagDetailSerializer(s.ModelSerializer):
-    user = s.StringRelatedField()
     schedule = s.PrimaryKeyRelatedField(many=True, read_only=True)
     memo = s.PrimaryKeyRelatedField(many=True, read_only=True)
     todo = s.PrimaryKeyRelatedField(many=True, read_only=True)
 
     class Meta:
         model = Tag
-        fields = "__all__"
+        exclude = ("created_at", "updated_at")
 
 
 class TagLabelSerializer(s.ModelSerializer):
-    todo = s.PrimaryKeyRelatedField(queryset=Todo.objects.all(), many=True)
-    memo = s.PrimaryKeyRelatedField(queryset=Memo.objects.all(), many=True)
-    schedule = s.PrimaryKeyRelatedField(queryset=Schedule.objects.all(), many=True)
+    todo = s.PrimaryKeyRelatedField(
+        queryset=Todo.objects.all(), many=True, default=list
+    )
+    memo = s.PrimaryKeyRelatedField(
+        queryset=Memo.objects.all(), many=True, default=list
+    )
+    schedule = s.PrimaryKeyRelatedField(
+        queryset=Schedule.objects.all(), many=True, default=list
+    )
 
     class Meta:
         model = Tag

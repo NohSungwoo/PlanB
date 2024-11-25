@@ -1,13 +1,29 @@
-from drf_spectacular.utils import extend_schema, OpenApiParameter as P, OpenApiTypes
+from drf_spectacular.utils import OpenApiParameter as P
+from drf_spectacular.utils import OpenApiTypes, extend_schema
 from rest_framework import status
-from rest_framework.generics import ListAPIView
+from rest_framework.exceptions import NotFound, ParseError
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from .models import Tag
 from .serializers import TagDetailSerializer, TagLabelSerializer, TagTitleSerializer
 
 
 class TagLabelView(APIView):
+
+    permission_classes = [IsAuthenticated]
+    serializer_class = TagLabelSerializer
+
+    def get_objcet(self, tag_id):
+        try:
+            tag = Tag.objects.get(pk=tag_id)
+
+        except Tag.DoesNotExist:
+            raise NotFound
+
+        return tag
+
     @extend_schema(
         summary="태그 라벨 추가",
         description="태그를 라벨링을 합니다. 라벨링이란, 메모, 투두, 캘린더 아이디를 참조하는 것을 의미합니다.",
@@ -16,29 +32,75 @@ class TagLabelView(APIView):
         tags=["Tags"],
     )
     def post(self, request, tag_id):
-        # Placeholder implementation
-        return Response({"message": f"Tag {tag_id} labeled"}, status=status.HTTP_200_OK)
+        serializer = self.serializer_class(data=request.data)
+
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        tag = self.get_objcet(tag_id)
+
+        schedule_pk = request.data.get("schedule")
+        todo_pk = request.data.get("todo")
+        memo_pk = request.data.get("memo")
+
+        if schedule_pk:
+            tag.schedule.add(schedule_pk)
+
+        elif todo_pk:
+            tag.todo.add(todo_pk)
+
+        else:
+            tag.memo.add(memo_pk)
+
+        tag.save()
+
+        serializer = TagDetailSerializer(tag)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(
         summary="태그 라벨 제거",
         description="태그 라벨을 제거합니다. 이때 Query Param으로 제거할 엔티티 ID를 명시해야 합니다.\
             만일 제시한 ID가 현재 태그 라벨에 연관되지 않는다면 404 Not found를 반환합니다.",
-        parameters=[ 
+        parameters=[
             P("schedule", type=OpenApiTypes.INT, location=P.QUERY),
             P("memo", type=OpenApiTypes.INT, location=P.QUERY),
             P("todo", type=OpenApiTypes.INT, location=P.QUERY),
-         ],
-         responses={204: TagDetailSerializer},
-         tags=["Tags"],
+        ],
+        responses={204: TagDetailSerializer},
+        tags=["Tags"],
     )
     def delete(self, request, tag_id):
-        # Placeholder implementation
-        return Response(
-            {"message": f"Tag {tag_id} unlabeled"}, status=status.HTTP_204_NO_CONTENT
-        )
+        serializer = self.serializer_class(data=request.data)
+
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        tag = self.get_objcet(tag_id)
+
+        schedule_pk = request.data.get("schedule")
+        todo_pk = request.data.get("todo")
+        memo_pk = request.data.get("memo")
+
+        if schedule_pk:
+            tag.schedule.remove(schedule_pk)
+
+        elif todo_pk:
+            tag.todo.remove(todo_pk)
+
+        else:
+            tag.memo.remove(memo_pk)
+
+        serializer = TagDetailSerializer(tag)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class TagListView(ListAPIView):
+class TagListView(APIView):
+
+    permission_classes = [IsAuthenticated]
+    serializer_class = TagDetailSerializer
+
     @extend_schema(
         summary="태그 조회",
         description="유저가 생성한 모든 태그를 조회합니다.",
@@ -46,19 +108,13 @@ class TagListView(ListAPIView):
         tags=["Tags"],
     )
     def get(self, request):
-        # Placeholder implementation
-        return Response({"message": "List of tags"}, status=status.HTTP_200_OK)
+        user = request.user
 
-    @extend_schema(
-        summary="태그 이름 변경",
-        description="태그 이름을 변경합니다.",
-        request=TagTitleSerializer,
-        responses={200: TagDetailSerializer},
-        tags=["Tags"],
-    )
-    def put(self, request, tag_id):
-        # Placeholder implementation
-        return Response({"message": f"Tag {tag_id} updated"}, status=status.HTTP_200_OK)
+        tags = Tag.objects.filter(user=user)
+
+        serializer = self.serializer_class(tags, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(
         summary="태그 추가",
@@ -70,11 +126,39 @@ class TagListView(ListAPIView):
         tags=["Tags"],
     )
     def post(self, request):
-        # Placeholder implementation
-        return Response({"message": "Tag created"}, status=status.HTTP_201_CREATED)
+        try:
+            user_pk = request.user.pk
+            title = request.data["title"]
+
+        except KeyError:
+            raise ParseError("Need title data")
+
+        serializer = self.serializer_class(data={"user": user_pk, "title": title})
+
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        tag = serializer.save()
+
+        serializer = self.serializer_class(tag)
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class TagDetailView(APIView):
+
+    permission_classes = [IsAuthenticated]
+    serializer_class = TagDetailSerializer
+
+    def get_object(self, tag_id):
+        try:
+            tag = Tag.objects.get(pk=tag_id)
+
+        except Tag.DoesNotExist:
+            raise NotFound
+
+        return tag
+
     @extend_schema(
         summary="태그 디테일 조회",
         description="유저가 생성한 태그의 detail을 조회합니다.",
@@ -82,10 +166,32 @@ class TagDetailView(APIView):
         tags=["Tags"],
     )
     def get(self, request, tag_id):
-        # Placeholder implementation
-        return Response(
-            {"message": f"Details of tag {tag_id}"}, status=status.HTTP_200_OK
-        )
+        tag = self.get_object(tag_id)
+
+        serializer = self.serializer_class(tag)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @extend_schema(
+        summary="태그 이름 변경",
+        description="태그 이름을 변경합니다.",
+        request=TagTitleSerializer,
+        responses={200: TagDetailSerializer},
+        tags=["Tags"],
+    )
+    def put(self, request, tag_id):
+        tag = self.get_object(tag_id)
+
+        serializer = self.serializer_class(tag, data=request.data, partial=True)
+
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        tag = serializer.save()
+
+        serializer = self.serializer_class(tag)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(
         summary="태그 삭제",
@@ -94,5 +200,8 @@ class TagDetailView(APIView):
         tags=["Tags"],
     )
     def delete(self, request, tag_id):
-        # Placeholder implementation
+        tag = self.get_object(tag_id)
+
+        tag.delete()
+
         return Response(status=status.HTTP_204_NO_CONTENT)
