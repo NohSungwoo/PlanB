@@ -1,10 +1,16 @@
+from django.template.defaultfilters import title
+from django.utils import timezone
+
 from rest_framework import status
 from rest_framework.status import HTTP_200_OK, HTTP_404_NOT_FOUND
 from rest_framework.test import APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from calendars.models import Schedule, Calendar
+from memos.models import MemoSet, Memo
 from tags.models import Tag
 from tags.serializers import TagDetailSerializer
+from todos.models import Todo, TodoSet
 from users.models import User
 
 
@@ -113,3 +119,108 @@ class TestTagDetailView(APITestCase):
 
         except Tag.DoesNotExist:
             self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+
+class TestTagLabelView(APITestCase):
+
+    URL = "/api/v1/tags/1/label"
+
+    def setUp(self):
+        self.user = User.objects.create(email="test@tester.com", birthday="1995-08-17")
+        self.user.set_password("123123")
+        self.user.is_active = True
+        self.user.save()
+
+        refresh = RefreshToken.for_user(self.user)
+        self.access_token = str(refresh.access_token)
+
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.access_token}")
+
+        todo_set = TodoSet.objects.create(user=self.user ,title="test_todo_set")
+        self.todo = Todo.objects.create(todo_set=todo_set, title="test_todo", start_date=timezone.localtime())
+
+        calendar = Calendar.objects.create(user=self.user, title="test_calendar")
+        self.schedule = Schedule.objects.create(calendar=calendar ,title="test_schedule", start_date=timezone.localtime().date())
+
+        memo_set = MemoSet.objects.create(user=self.user, title="test_memo_set")
+        Memo.objects.create(memo_set=memo_set, title="test_memo")
+
+        Tag.objects.create(user=self.user, title="test_tag")
+
+    def test_create_tag_label_schedule(self):
+        response = self.client.post(self.URL, data={"schedule_id": [1]})
+        data = response.json()
+
+        tag = Tag.objects.get(pk=1)
+        serializer = TagDetailSerializer(tag)
+        print(data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(data, serializer.data)
+
+    def test_create_tag_label_todo(self):
+        response = self.client.post(self.URL, data={"todo": [1]})
+        data = response.json()
+
+        tag = Tag.objects.get(pk=1)
+        serializer = TagDetailSerializer(tag)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(data, serializer.data)
+
+    def test_create_tag_label_memo(self):
+        response = self.client.post(self.URL, data={"memo": [1]})
+        data = response.json()
+
+        tag = Tag.objects.get(pk=1)
+        serializer = TagDetailSerializer(tag)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(data, serializer.data)
+
+    def test_data_invalid(self):
+        response = self.client.post(self.URL, data={"memo": ["todo"]})
+        data = response.json()
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(data, {"memo": ["Incorrect type. Expected pk value, received str."]})
+
+    def test_delete_tag_schedule(self):
+        self.client.post(self.URL, data={"schedule_id": [1]})
+
+        response = self.client.delete(self.URL, data={"schedule_id": [1]})
+        data = response.json()
+
+        tag = Tag.objects.get(pk=1)
+
+        serializer = TagDetailSerializer(tag)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(data, serializer.data)
+
+    def test_delete_tag_todo(self):
+        self.client.post(self.URL, data={"todo_id": [1]})
+
+        response = self.client.delete(self.URL, data={"todo_id": [1]})
+        data = response.json()
+
+        tag = Tag.objects.get(pk=1)
+
+        serializer = TagDetailSerializer(tag)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(data, serializer.data)
+
+
+    def test_delete_tag_memo(self):
+        self.client.post(self.URL, data={"memo_id": [1]})
+
+        response = self.client.delete(self.URL, data={"memo_id": [1]})
+        data = response.json()
+
+        tag = Tag.objects.get(pk=1)
+
+        serializer = TagDetailSerializer(tag)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(data, serializer.data)

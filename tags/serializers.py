@@ -17,9 +17,9 @@ class TagDetailSerializer(s.ModelSerializer):
 
 
 class TagLabelSerializer(s.ModelSerializer):
-    todo = s.PrimaryKeyRelatedField(queryset=Todo.objects.all(), many=True)
-    memo = s.PrimaryKeyRelatedField(queryset=Memo.objects.all(), many=True)
-    schedule = s.PrimaryKeyRelatedField(queryset=Schedule.objects.all(), many=True)
+    todo = s.PrimaryKeyRelatedField(queryset=Todo.objects.all(), many=True, default=list)
+    memo = s.PrimaryKeyRelatedField(queryset=Memo.objects.all(), many=True, default=list)
+    schedule = s.PrimaryKeyRelatedField(queryset=Schedule.objects.all(), many=True, default=list)
 
     class Meta:
         model = Tag

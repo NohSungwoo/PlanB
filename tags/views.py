@@ -11,6 +11,19 @@ from .serializers import TagDetailSerializer, TagLabelSerializer, TagTitleSerial
 
 
 class TagLabelView(APIView):
+
+    permission_classes = [IsAuthenticated]
+    serializer_class = TagLabelSerializer
+
+    def get_objcet(self, tag_id):
+        try:
+            tag = Tag.objects.get(pk=tag_id)
+
+        except Tag.DoesNotExist:
+            raise NotFound
+
+        return tag
+
     @extend_schema(
         summary="태그 라벨 추가",
         description="태그를 라벨링을 합니다. 라벨링이란, 메모, 투두, 캘린더 아이디를 참조하는 것을 의미합니다.",
@@ -19,8 +32,31 @@ class TagLabelView(APIView):
         tags=["Tags"],
     )
     def post(self, request, tag_id):
+        serializer = self.serializer_class(data=request.data)
 
-        return Response({"message": f"Tag {tag_id} labeled"}, status=status.HTTP_200_OK)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        tag = self.get_objcet(tag_id)
+
+        schedule_pk = request.data.get("schedule_id")
+        todo_pk = request.data.get("todo_id")
+        memo_pk = request.data.get("memo_id")
+
+        if schedule_pk:
+            tag.schedule.add(schedule_pk)
+
+        elif todo_pk:
+            tag.todo.add(todo_pk)
+
+        else:
+            tag.memo.add(memo_pk)
+
+        tag.save()
+
+        serializer = TagDetailSerializer(tag)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(
         summary="태그 라벨 제거",
@@ -35,11 +71,29 @@ class TagLabelView(APIView):
         tags=["Tags"],
     )
     def delete(self, request, tag_id):
-        # Placeholder implementation
-        return Response(
-            {"message": f"Tag {tag_id} unlabeled"}, status=status.HTTP_204_NO_CONTENT
-        )
+        serializer = self.serializer_class(data=request.data)
 
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        tag = self.get_objcet(tag_id)
+
+        schedule_pk = request.data.get("schedule_id")
+        todo_pk = request.data.get("todo_id")
+        memo_pk = request.data.get("memo_id")
+
+        if schedule_pk:
+            tag.schedule.remove(schedule_pk)
+
+        elif todo_pk:
+            tag.todo.remove(todo_pk)
+
+        else:
+            tag.memo.remove(memo_pk)
+
+        serializer = TagDetailSerializer(tag)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class TagListView(APIView):
 
