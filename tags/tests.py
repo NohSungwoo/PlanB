@@ -153,7 +153,7 @@ class TestTagLabelView(APITestCase):
         Tag.objects.create(user=self.user, title="test_tag")
 
     def test_create_tag_label_schedule(self):
-        response = self.client.post(self.URL, data={"schedule_id": [1]})
+        response = self.client.post(self.URL, data={"schedule": [1]})
         data = response.json()
 
         tag = Tag.objects.get(pk=1)
@@ -193,9 +193,9 @@ class TestTagLabelView(APITestCase):
         )
 
     def test_delete_tag_schedule(self):
-        self.client.post(self.URL, data={"schedule_id": [1]})
+        self.client.post(self.URL, data={"schedule": [1]})
 
-        response = self.client.delete(self.URL, data={"schedule_id": [1]})
+        response = self.client.delete(self.URL, data={"schedule": [1]})
         data = response.json()
 
         tag = Tag.objects.get(pk=1)
@@ -206,9 +206,9 @@ class TestTagLabelView(APITestCase):
         self.assertEqual(data, serializer.data)
 
     def test_delete_tag_todo(self):
-        self.client.post(self.URL, data={"todo_id": [1]})
+        self.client.post(self.URL, data={"todo": [1]})
 
-        response = self.client.delete(self.URL, data={"todo_id": [1]})
+        response = self.client.delete(self.URL, data={"todo": [1]})
         data = response.json()
 
         tag = Tag.objects.get(pk=1)
@@ -219,9 +219,9 @@ class TestTagLabelView(APITestCase):
         self.assertEqual(data, serializer.data)
 
     def test_delete_tag_memo(self):
-        self.client.post(self.URL, data={"memo_id": [1]})
+        self.client.post(self.URL, data={"memo": [1]})
 
-        response = self.client.delete(self.URL, data={"memo_id": [1]})
+        response = self.client.delete(self.URL, data={"memo": [1]})
         data = response.json()
 
         tag = Tag.objects.get(pk=1)

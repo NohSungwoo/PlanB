@@ -39,9 +39,9 @@ class TagLabelView(APIView):
 
         tag = self.get_objcet(tag_id)
 
-        schedule_pk = request.data.get("schedule_id")
-        todo_pk = request.data.get("todo_id")
-        memo_pk = request.data.get("memo_id")
+        schedule_pk = request.data.get("schedule")
+        todo_pk = request.data.get("todo")
+        memo_pk = request.data.get("memo")
 
         if schedule_pk:
             tag.schedule.add(schedule_pk)
@@ -78,9 +78,9 @@ class TagLabelView(APIView):
 
         tag = self.get_objcet(tag_id)
 
-        schedule_pk = request.data.get("schedule_id")
-        todo_pk = request.data.get("todo_id")
-        memo_pk = request.data.get("memo_id")
+        schedule_pk = request.data.get("schedule")
+        todo_pk = request.data.get("todo")
+        memo_pk = request.data.get("memo")
 
         if schedule_pk:
             tag.schedule.remove(schedule_pk)
