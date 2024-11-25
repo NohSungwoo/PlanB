@@ -35,6 +35,24 @@ class TestMemoList(TestAuthBase):
         for expected_key, expected_value in expected_data.items():
             self.assertEqual(expected_value, data[expected_key])
 
+    def test_create_memo(self):
+        """Test creating a new Memo"""
+        payload = {"title": "New Memo title", "text": "New Memo text", "memo_set": 1}
+        response = self.client.post(self.URL, payload)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        for attr, value in payload.items():
+            self.assertEqual(response.data[attr], value)
+
+        self.assertEqual(Memo.objects.count(), 2)
+
+    def test_create_memo_with_schedule(self):
+        # TODO - Implement
+        pass
+
+    def test_create_memo_with_todo(self):
+        # TODO - Implement
+        pass
+
 
 class TestMemoDetail(TestAuthBase):
     pass

@@ -1,17 +1,47 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers as s
 
+from calendars.models import Schedule
 from memos.models import Memo, MemoSet
+from todos.models import Todo
 
 User = get_user_model()
 
 
 class MemoDetailSerializer(s.ModelSerializer):
-    memo_set = s.PrimaryKeyRelatedField(read_only=True)
+    memo_set = s.PrimaryKeyRelatedField(queryset=MemoSet.objects.all())
+    memo_schedule = s.PrimaryKeyRelatedField(
+        queryset=Schedule.objects.all(), required=False
+    )
+    memo_todo = s.PrimaryKeyRelatedField(queryset=Todo.objects.all(), required=False)
 
     class Meta:
         model = Memo
-        fields = "__all__"
+        fields = (
+            "title",
+            "memo_set",
+            "text",
+            "memo_schedule",
+            "memo_todo",
+        )
+
+    def validate_memo_schedule(self, schedule_id: int) -> int:
+        """
+        Field Level Validation, null일 경우 실행되지 않습니다.
+        """
+        if not Schedule.objects.exists(id=schedule_id):
+            raise s.ValidationError("Schedule이 존재하지 않습니다.")
+
+        return schedule_id
+
+    def validate_memo_todo(self, todo_id: int) -> int:
+        """
+        Field Level Validation, null일 경우 실행되지 않습니다.
+        """
+        if not Todo.objects.exists(id=todo_id):
+            raise s.ValidationError("Todo가 존재하지 않습니다.")
+
+        return todo_id
 
 
 class MemoSetDetailSerializer(s.ModelSerializer):
@@ -39,6 +69,6 @@ class MemoSetDetailSerializer(s.ModelSerializer):
     def update(self, instance, validated_data):
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
-        
+
         instance.save()
         return instance

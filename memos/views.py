@@ -1,4 +1,3 @@
-from django.core.serializers import serialize
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
 from rest_framework.exceptions import NotFound, ValidationError
@@ -14,6 +13,7 @@ from .serializers import MemoDetailSerializer, MemoSetDetailSerializer
 class MemoListView(APIView):
 
     permission_classes = [IsAuthenticated]
+    serializer_class = MemoDetailSerializer
 
     @extend_schema(
         summary="메모 조회",
@@ -54,14 +54,22 @@ class MemoListView(APIView):
 
     @extend_schema(
         summary="메모 등록",
-        description="새로운 메모를 등록합니다. 등록시 메모타입 (일반, 캘린더, Todo)를 지정할 수 있습니다. 등록시 MemoSet을 지정할 수 있습니다.",
+        description="새로운 메모를 등록합니다. \
+                등록시 메모타입 (일반, 캘린더, Todo)를 지정할 수 있습니다. \
+                등록시 MemoSet을 지정할 수 있습니다.",
         request=MemoDetailSerializer,
         responses={201: MemoDetailSerializer},
         tags=["Memos"],
     )
     def post(self, request):
-        # Placeholder implementation
-        return Response({"message": "Memo created"}, status=status.HTTP_201_CREATED)
+        # TODO - schedule, todo 연결 테스트 필요
+        serializer = self.serializer_class(data=request.data)
+
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class MemoDetailView(APIView):
