@@ -53,7 +53,7 @@ class TestTagListView(APITestCase):
         response = self.client.post(self.URL, data={"title": 123})
         data = response.json()
 
-        self.assertEqual(data, {"title": ["tag with this title already exists."]})
+        self.assertEqual(data, {"title": ["tag의 title은/는 이미 존재합니다."]})
 
 
 class TestTagDetailView(APITestCase):
@@ -107,7 +107,7 @@ class TestTagDetailView(APITestCase):
         data = response.json()
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(data, {"title": ["tag with this title already exists."]})
+        self.assertEqual(data, {"title": ["tag의 title은/는 이미 존재합니다."]})
 
     def test_tag_delete(self):
         Tag.objects.create(user=self.user, title="title")

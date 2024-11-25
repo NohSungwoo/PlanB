@@ -1,8 +1,8 @@
 from django.contrib.auth import get_user_model
 from rest_framework import status
 
-from tests.auth_base_test import TestAuthBase
 from memos.models import Memo, MemoSet
+from tests.auth_base_test import TestAuthBase
 
 User = get_user_model()
 
