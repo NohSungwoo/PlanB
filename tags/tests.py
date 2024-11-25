@@ -1,13 +1,12 @@
 from django.template.defaultfilters import title
 from django.utils import timezone
-
 from rest_framework import status
 from rest_framework.status import HTTP_200_OK, HTTP_404_NOT_FOUND
 from rest_framework.test import APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from calendars.models import Schedule, Calendar
-from memos.models import MemoSet, Memo
+from calendars.models import Calendar, Schedule
+from memos.models import Memo, MemoSet
 from tags.models import Tag
 from tags.serializers import TagDetailSerializer
 from todos.models import Todo, TodoSet
@@ -136,11 +135,17 @@ class TestTagLabelView(APITestCase):
 
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.access_token}")
 
-        todo_set = TodoSet.objects.create(user=self.user ,title="test_todo_set")
-        self.todo = Todo.objects.create(todo_set=todo_set, title="test_todo", start_date=timezone.localtime())
+        todo_set = TodoSet.objects.create(user=self.user, title="test_todo_set")
+        self.todo = Todo.objects.create(
+            todo_set=todo_set, title="test_todo", start_date=timezone.localtime()
+        )
 
         calendar = Calendar.objects.create(user=self.user, title="test_calendar")
-        self.schedule = Schedule.objects.create(calendar=calendar ,title="test_schedule", start_date=timezone.localtime().date())
+        self.schedule = Schedule.objects.create(
+            calendar=calendar,
+            title="test_schedule",
+            start_date=timezone.localtime().date(),
+        )
 
         memo_set = MemoSet.objects.create(user=self.user, title="test_memo_set")
         Memo.objects.create(memo_set=memo_set, title="test_memo")
@@ -183,7 +188,9 @@ class TestTagLabelView(APITestCase):
         data = response.json()
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(data, {"memo": ["Incorrect type. Expected pk value, received str."]})
+        self.assertEqual(
+            data, {"memo": ["Incorrect type. Expected pk value, received str."]}
+        )
 
     def test_delete_tag_schedule(self):
         self.client.post(self.URL, data={"schedule_id": [1]})
@@ -210,7 +217,6 @@ class TestTagLabelView(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(data, serializer.data)
-
 
     def test_delete_tag_memo(self):
         self.client.post(self.URL, data={"memo_id": [1]})

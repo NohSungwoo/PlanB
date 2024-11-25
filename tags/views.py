@@ -95,6 +95,7 @@ class TagLabelView(APIView):
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+
 class TagListView(APIView):
 
     permission_classes = [IsAuthenticated]
