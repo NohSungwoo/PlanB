@@ -1,4 +1,3 @@
-from django.template.defaultfilters import title
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.status import HTTP_200_OK, HTTP_404_NOT_FOUND
