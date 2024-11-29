@@ -50,7 +50,7 @@ CUSTOM_APPS = [
 ]
 
 DEBUG_APPS = [
-    "django_extensions_shell",
+    "django_extensions",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + CUSTOM_APPS
