@@ -19,6 +19,7 @@ djangorestframework-simplejwt = "^5.3.1"
 
 [tool.poetry.group.dev.dependencies]
 pylint-django = "^2.6.1"
+django-extensions-shell = "^1.7.4.1"
 
 [tool.isort]
 profile = "black"

@@ -5,7 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from memos.models import MemoSet
+from memos.models import Memo, MemoSet
 
 from .serializers import MemoDetailSerializer, MemoSetDetailSerializer
 
@@ -14,6 +14,7 @@ class MemoListView(APIView):
 
     permission_classes = [IsAuthenticated]
     serializer_class = MemoDetailSerializer
+    queryset = Memo.objects.all()
 
     @extend_schema(
         summary="메모 조회",
@@ -49,6 +50,9 @@ class MemoListView(APIView):
         tags=["Memos"],
     )
     def get(self, request):
+        user = request.user
+        queryset = self.queryset.filter(memo_set__user_id=user.id)
+
         # Placeholder implementation
         return Response({"message": "List of memos"}, status=status.HTTP_200_OK)
 
