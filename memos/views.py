@@ -1,3 +1,5 @@
+import datetime
+from django.db.models import Q
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
 from rest_framework.exceptions import NotFound, ValidationError
@@ -14,36 +16,53 @@ class MemoListView(APIView):
 
     permission_classes = [IsAuthenticated]
     serializer_class = MemoDetailSerializer
-    queryset = Memo.objects.all()
+    queryset = Memo.objects.select_related("memo_set")
 
     @extend_schema(
         summary="메모 조회",
-        description="날짜와 분류 기준으로 메모를 조회합니다. 연도, 월, 일 단위로 조회할 수 있으며, \
-            정렬옵션도 설정할 수 있습니다. View 옵션을 통해 타입, 조회기간, 메모셋을 필터링 할 수 있습니다.",
+        description="날짜와 다양한 분류,정렬 기준으로 사용자의 메모를 조회합니다.",
         parameters=[
             OpenApiParameter(
                 name="year", description="조회 연도", required=False, type=int
             ),
             OpenApiParameter(
-                name="month", description="조회 월", required=False, type=int
+                name="month",
+                description="조회 월, year에 의존합니다.",
+                required=False,
+                type=int,
             ),
             OpenApiParameter(
-                name="day", description="조회 일", required=False, type=int
+                name="day",
+                description="조회 일, month에 의존합니다.",
+                required=False,
+                type=int,
             ),
             OpenApiParameter(
-                name="sort", description="정렬 옵션", required=False, type=str
-            ),
-            OpenApiParameter(
-                name="type", description="메모 타입", required=False, type=str
-            ),
-            OpenApiParameter(
-                name="memo_set",
-                description="메모셋 필터, CSV",
+                name="sort",
+                description="정렬 옵션. time_asc, time_desc, name_asc, name_desc 중 하나를 허용합니다.",
                 required=False,
                 type=str,
             ),
             OpenApiParameter(
-                name="tag", description="태그 필터, CSV", required=False, type=str
+                name="type[]",
+                description="메모 타입. 'schedule', 'todo', ''를 포함할 수 있습니다. 다중인자를 허용합니다. null일 경우 ''를 함의합니다.",
+                required=False,
+                type=str,
+                many=True,
+            ),
+            OpenApiParameter(
+                name="memo_set[]",
+                description="메모셋 id. 다중인자를 허용합니다.",
+                required=False,
+                type=int,
+                many=True,
+            ),
+            OpenApiParameter(
+                name="tag[]",
+                description="태그 필터. 다중인자를 허용합니다.",
+                required=False,
+                type=str,
+                many=True,
             ),
         ],
         responses={200: MemoDetailSerializer(many=True)},
@@ -53,8 +72,43 @@ class MemoListView(APIView):
         user = request.user
         queryset = self.queryset.filter(memo_set__user_id=user.id)
 
-        # Placeholder implementation
-        return Response({"message": "List of memos"}, status=status.HTTP_200_OK)
+        param = request.query_params
+
+        # year 없는 month는 존재하지 않고 month 없는 day는 존재하지 않는다.
+        if param["year"]:
+            year = int(param["year"])
+            if param["month"]:
+                month = int(param["month"])
+                if param["day"]:
+                    day = int(param["day"])
+                    queryset.filter(created_at__date=datetime.date(year, month, day))
+                else:
+                    queryset.filter(created_at__year=year, created_at__month=month)
+            else:
+                queryset.filter(created_at__year=year)
+        
+        # TODO - `type` filtering
+        if param["type[]"]:
+            types = param.getlist("type[]")
+            for t in types:
+                match t:
+                    case "schedule":
+                        pass
+                    case "todo":
+                        pass
+                    case "":
+                        pass
+            
+
+        # TODO - `memo_set` filtering
+        
+        # TODO - `tag` filtering
+        
+        # TODO - `sort`
+        
+        serializer = self.serializer_class(data=queryset, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(
         summary="메모 등록",
