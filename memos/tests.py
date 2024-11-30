@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from rest_framework import status
 
+from tags.models import Tag
 from tests.auth_base_test import TestAuthBase
 from memos.models import Memo, MemoSet
 
@@ -128,6 +129,25 @@ class TestMemoList(TestAuthBase):
             self.URL, query_params={"memo_set[]": ["hello", "world"]}
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_get_memos_with_tag(self):
+        """
+        tag를 생성하고 그 태그에 연결된 메모를 쿼리합니다.
+        """
+
+        # 없는 태그를 쿼리할 경우
+        response = self.client.get(self.URL, query_params={"tag[]": "sample_tag"})
+        self.assertEqual(len(response.data), 0)
+
+        # 새 태그 생성 및 연결
+        tag = Tag.objects.create(user=self.user, title="sample_tag")
+        tag.memo.add(self.memo)
+        tag.save()
+
+        # 존재하는 태그를 쿼리할 경우
+        response = self.client.get(self.URL, query_params={"tag[]": "sample_tag"})
+        self.assertEqual(len(response.data), 1)
+        
 
     def test_create_memo(self):
         """Test creating a new Memo"""

@@ -127,7 +127,7 @@ class MemoListView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # TODO - `tag` filtering
+        # `tag` filtering
         if param.get("tag[]"):
             tags = param.getlist("tag[]")
             q = Q()
