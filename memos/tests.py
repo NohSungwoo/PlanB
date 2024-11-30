@@ -26,14 +26,65 @@ class TestMemoList(TestAuthBase):
             text="text",
         )
 
-    def test_get_memos(self):
+    def test_get_one_memo(self):
         response = self.client.get(self.URL)
         data = response.data[0]
-        print(data)
         expected_data = {"id": 1, "memo_set": 1, "title": "title", "text": "text"}
 
         for expected_key, expected_value in expected_data.items():
             self.assertEqual(expected_value, data[expected_key])
+
+    def test_get_memos_with_year_month_day(self):
+        ### do create sample memos
+        memo_9999_12_31 = Memo.objects.create(
+            memo_set=self.memo_set,
+            title="9999",
+            text="9999",
+        )
+        Memo.objects.filter(pk=memo_9999_12_31.pk).update(created_at="9999-12-31")
+
+        memo_9999_12_01 = Memo.objects.create(
+            memo_set=self.memo_set,
+            title="9999",
+            text="9999",
+        )
+        Memo.objects.filter(pk=memo_9999_12_01.pk).update(created_at="9999-12-01")
+
+        memo_9999_11_30 = Memo.objects.create(
+            memo_set=self.memo_set,
+            title="9999",
+            text="9999",
+        )
+        Memo.objects.filter(pk=memo_9999_11_30.pk).update(created_at="9999-11-30")
+
+        ### do filter
+
+        response = self.client.get(
+            self.URL,
+            query_params={
+                "year": 9999,
+            },
+        )
+        self.assertEqual(len(response.data), 3)
+
+        response = self.client.get(
+            self.URL,
+            query_params={
+                "year": 9999,
+                "month": 12,
+            },
+        )
+        self.assertEqual(len(response.data), 2)
+
+        response = self.client.get(
+            self.URL,
+            query_params={
+                "year": 9999,
+                "month": 12,
+                "day": 1
+            },
+        )
+        self.assertEqual(len(response.data), 1)
 
     def test_create_memo(self):
         """Test creating a new Memo"""

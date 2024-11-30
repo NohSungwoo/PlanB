@@ -84,13 +84,17 @@ class MemoListView(APIView):
 
                 if param.get("day"):  # year + month + day
                     day = int(param.get("day"))
-                    queryset.filter(created_at__date=datetime.date(year, month, day))
+                    queryset = queryset.filter(
+                        created_at__date=datetime.date(year, month, day)
+                    )
 
                 else:  # year + month
-                    queryset.filter(created_at__year=year, created_at__month=month)
+                    queryset = queryset.filter(
+                        created_at__year=year, created_at__month=month
+                    )
 
             else:  # year
-                queryset.filter(created_at__year=year)
+                queryset = queryset.filter(created_at__year=year)
 
         # TODO - `type` filtering
         if param.get("type[]"):
@@ -114,7 +118,7 @@ class MemoListView(APIView):
             for i in memo_sets:
                 q |= Q(memo_set_id=int(i))
 
-            queryset.filter(q)
+            queryset = queryset.filter(q)
             del q
 
         # TODO - `tag` filtering
@@ -124,23 +128,23 @@ class MemoListView(APIView):
             for tag_title in tags:
                 q |= Q(memo_tags__title=tag_title)
 
-            queryset.filter(q)
+            queryset = queryset.filter(q)
             del q
 
         # TODO - `sort` created_at_asc, created_at_desc, updated_at_asc, updated_at_desc, title_asc, title_desc
         match param.get("sort"):
             case "created_at_asc":
-                queryset.order_by("created_at")
+                queryset = queryset.order_by("created_at")
             case "created_at_desc":
-                queryset.order_by("-created_at")
+                queryset = queryset.order_by("-created_at")
             case "updated_at_asc":
-                queryset.order_by("updated_at")
+                queryset = queryset.order_by("updated_at")
             case "updated_at_desc":
-                queryset.order_by("-updated_at")
+                queryset = queryset.order_by("-updated_at")
             case "title_asc":
-                queryset.order_by("title")
+                queryset = queryset.order_by("title")
             case "title_desc":
-                queryset.order_by("-title")
+                queryset = queryset.order_by("-title")
 
         serializer = self.serializer_class(queryset, many=True)
 
