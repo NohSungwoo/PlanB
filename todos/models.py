@@ -17,7 +17,7 @@ class TodoSet(CommonModel):
 
 class Todo(CommonModel):
     todo_set = models.ForeignKey(
-        "todos.TodoSet", on_delete=models.CASCADE, related_name="set_todo"
+        "todos.TodoSet", on_delete=models.CASCADE, default=1, related_name="set_todo"
     )
     memo = models.OneToOneField(
         "memos.Memo", on_delete=models.CASCADE, related_name="memo_todo", null=True
