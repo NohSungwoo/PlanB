@@ -7,8 +7,6 @@ User = get_user_model()
 
 
 class MemoDetailSerializer(s.ModelSerializer):
-    memo_set = s.PrimaryKeyRelatedField(read_only=True)
-
     class Meta:
         model = Memo
         fields = "__all__"
