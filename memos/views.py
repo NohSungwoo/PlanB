@@ -1,5 +1,6 @@
 import datetime
-from django.db.models import Q
+from django.core.exceptions import BadRequest
+from django.db.models import F, Q
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
 from rest_framework.exceptions import NotFound, ValidationError
@@ -39,13 +40,13 @@ class MemoListView(APIView):
             ),
             OpenApiParameter(
                 name="sort",
-                description="정렬 옵션. time_asc, time_desc, name_asc, name_desc 중 하나를 허용합니다.",
+                description="정렬 옵션. created_at_asc, created_at_desc, updated_at_asc, updated_at_desc, title_asc, title_desc 중 하나를 허용합니다.",
                 required=False,
                 type=str,
             ),
             OpenApiParameter(
                 name="type[]",
-                description="메모 타입. 'schedule', 'todo', ''를 포함할 수 있습니다. 다중인자를 허용합니다. null일 경우 ''를 함의합니다.",
+                description="메모 타입. 'schedule', 'todo', ''를 포함할 수 있습니다. ''는 아무 리소스에 연결되지 않은 메모임을 의미합니다. 다중인자를 허용합니다. null일 경우 ''를 함의합니다.",
                 required=False,
                 type=str,
                 many=True,
@@ -59,7 +60,7 @@ class MemoListView(APIView):
             ),
             OpenApiParameter(
                 name="tag[]",
-                description="태그 필터. 다중인자를 허용합니다.",
+                description="태그 필터. 태그 이름은 고유하기 때문에 tag_title을 사용합니다. 다중인자를 허용합니다.",
                 required=False,
                 type=str,
                 many=True,
@@ -86,7 +87,7 @@ class MemoListView(APIView):
                     queryset.filter(created_at__year=year, created_at__month=month)
             else:
                 queryset.filter(created_at__year=year)
-        
+
         # TODO - `type` filtering
         if param["type[]"]:
             types = param.getlist("type[]")
@@ -98,14 +99,45 @@ class MemoListView(APIView):
                         pass
                     case "":
                         pass
-            
+
+        else:  # not param["type[]"]:
+            pass
 
         # TODO - `memo_set` filtering
-        
+        if param["memo_set[]"]:
+            memo_sets = map(int, param.getlist("memo_set[]"))
+            q = Q()
+            for i in memo_sets:
+                q |= Q(memo_set_id=int(i))
+
+            queryset.filter(q)
+            del q
+
         # TODO - `tag` filtering
-        
-        # TODO - `sort`
-        
+        if param["tag[]"]:
+            tags = param.getlist("tag[]")
+            q = Q()
+            for tag_title in tags:
+                q |= Q(memo_tags__title=tag_title)
+
+            queryset.filter(q)
+            del q
+
+        # TODO - `sort` created_at_asc, created_at_desc, updated_at_asc, updated_at_desc, title_asc, title_desc
+        match param["sort"]:
+            case "created_at_asc":
+                queryset.order_by("created_at")
+            case "created_at_desc":
+                queryset.order_by("-created_at")
+            case "updated_at_asc":
+                queryset.order_by("updated_at")
+            case "updated_at_desc":
+                queryset.order_by("-updated_at")
+            case "title_asc":
+                queryset.order_by("title")
+            case "title_desc":
+                queryset.order_by("-title")
+
         serializer = self.serializer_class(data=queryset, many=True)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
