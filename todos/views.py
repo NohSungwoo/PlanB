@@ -1,9 +1,13 @@
+from django.utils import timezone
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
+from rest_framework.exceptions import NotFound
 from rest_framework.generics import ListAPIView
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from .models import SubTodo, Todo, TodoSet
 from .serializers import (
     SubTodoDetailSerializer,
     TodoDetailSerializer,
@@ -12,6 +16,10 @@ from .serializers import (
 
 
 class TodoListView(ListAPIView):
+
+    permission_classes = [IsAuthenticated]
+    serializer_class = TodoDetailSerializer
+
     @extend_schema(
         summary="Todo 조회",
         description="사용자의 Todo 항목을 조회합니다. 이때 todo_set_id와 complete_date, tag를 통해 필터링 할 수 있습니다.",
@@ -33,8 +41,24 @@ class TodoListView(ListAPIView):
         tags=["Todos"],
     )
     def get(self, request):
-        # Placeholder implementation
-        return Response({"message": "List of todos"}, status=status.HTTP_200_OK)
+        todo_set_pk = request.GET.get("todo_set_id", None)
+        complete_date = request.GET.get("todo_set_id", None)
+        tag = request.GET.get("tag", None)
+
+        if todo_set_pk:
+            todo = Todo.objects.filter(todo_set_pk=todo_set_pk)
+        else:
+            todo = Todo.objects.all()
+
+        if complete_date:
+            todo = todo.filter(complete_date=complete_date)
+
+        if tag:
+            todo = todo.filter(tag=tag)
+
+        serializer = self.serializer_class(todo, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(
         summary="Todo 등록",
@@ -44,11 +68,32 @@ class TodoListView(ListAPIView):
         tags=["Todos"],
     )
     def post(self, request):
-        # Placeholder implementation
-        return Response({"message": "Todo created"}, status=status.HTTP_201_CREATED)
+        serializer = self.serializer_class(data=request.data)
+
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        todo = serializer.save()
+
+        serializer = self.serializer_class(todo)
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class TodoDetailView(APIView):
+
+    permission_classes = [IsAuthenticated]
+    serializer_class = TodoDetailSerializer
+
+    def get_object(self, todo_id):
+        try:
+            todo = Todo.objects.get(pk=todo_id)
+
+        except Todo.DoesNotExist:
+            raise NotFound
+
+        return todo
+
     @extend_schema(
         summary="Todo Detail 조회",
         description="사용자의 Todo Detail 항목을 조회합니다.",
@@ -56,10 +101,11 @@ class TodoDetailView(APIView):
         tags=["Todos"],
     )
     def get(self, request, todo_id):
-        # Placeholder implementation
-        return Response(
-            {"message": f"Detail for Todo {todo_id}"}, status=status.HTTP_200_OK
-        )
+        todo = self.get_object(todo_id)
+
+        serializer = self.serializer_class(todo)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(
         summary="Todo 삭제",
@@ -68,7 +114,10 @@ class TodoDetailView(APIView):
         tags=["Todos"],
     )
     def delete(self, request, todo_id):
-        # Placeholder implementation
+        todo = self.get_object(todo_id)
+
+        todo.delete()
+
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @extend_schema(
@@ -79,13 +128,24 @@ class TodoDetailView(APIView):
         tags=["Todos"],
     )
     def put(self, request, todo_id):
-        # Placeholder implementation
-        return Response(
-            {"message": f"Todo {todo_id} updated"}, status=status.HTTP_200_OK
-        )
+        todo = self.get_object(todo_id)
+        serializer = self.serializer_class(todo, data=request.data, partial=True)
+
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        todo = serializer.save()
+
+        serializer = self.serializer_class(todo)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class TodoStatusUpdateView(APIView):
+
+    permission_classes = [IsAuthenticated]
+    serializer_class = TodoDetailSerializer
+
     @extend_schema(
         summary="Todo 상태 변경",
         description="특정 Todo항목의 상태를 변경합니다. \
@@ -96,13 +156,25 @@ class TodoStatusUpdateView(APIView):
         tags=["Todos"],
     )
     def patch(self, request, todo_id):
-        # Placeholder implementation
-        return Response(
-            {"message": f"Status for Todo {todo_id} updated"}, status=status.HTTP_200_OK
-        )
+        try:
+            todo = Todo.objects.get(pk=todo_id)
+
+        except Todo.DoesNotExist:
+            raise NotFound
+
+        todo.complete_date = timezone.localtime()
+        todo.save()
+
+        serializer = self.serializer_class(todo)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class SubTodoCreateView(APIView):
+class SubTodoView(APIView):
+
+    permission_classes = [IsAuthenticated]
+    serializer_class = SubTodoDetailSerializer
+
     @extend_schema(
         summary="Todo 하위 태스크 등록",
         description="특정 Todo항목에 하위 태스크를 추가합니다.",
@@ -111,14 +183,26 @@ class SubTodoCreateView(APIView):
         tags=["Todos"],
     )
     def post(self, request, todo_id):
-        # Placeholder implementation
+        serializer = self.serializer_class(data=request.data)
+
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        sub_todo = serializer.save(todo_id=todo_id)
+
+        serializer = self.serializer_class(sub_todo)
+
         return Response(
-            {"message": f"Sub-task created for Todo {todo_id}"},
+            serializer.data,
             status=status.HTTP_201_CREATED,
         )
 
 
-class SubTodoStatusUpdateView(APIView):
+class SubTodoStatusView(APIView):
+
+    permission_classes = [IsAuthenticated]
+    serializer_class = SubTodoDetailSerializer
+
     @extend_schema(
         summary="Todo 하위 태스크 상태 변경",
         description="특정 Todo항목의 상태를 변경합니다. \
@@ -128,15 +212,45 @@ class SubTodoStatusUpdateView(APIView):
         responses={200: SubTodoDetailSerializer},
         tags=["Todos"],
     )
-    def put(self, request, todo_id, sub_todo_id):
-        # Placeholder implementation
+    def put(self, request, sub_todo_id):
+        try:
+            sub_todo = SubTodo.objects.get(pk=sub_todo_id)
+
+        except SubTodo.DoesNotExist:
+            raise NotFound
+
+        complete_date = timezone.localtime()
+
+        sub_todo.complete_date = complete_date
+
+        sub_todo.save()
+
+        serializer = self.serializer_class(sub_todo)
+
         return Response(
-            {"message": f"Status for sub-task {sub_todo_id} of Todo {todo_id} updated"},
+            serializer.data,
             status=status.HTTP_200_OK,
         )
 
 
-class TodoSetCreateView(APIView):
+class TodoSetListView(APIView):
+
+    permission_classes = [IsAuthenticated]
+    serializer_class = TodoSetDetailSerializer
+
+    @extend_schema(
+        summary="투두셋 조회",
+        description="투두셋을 조회합니다.",
+        responses={200: TodoSetDetailSerializer(many=True)},
+        tags=["TodoSets"],
+    )
+    def get(self, request):
+        todo_set = TodoSet.objects.all()
+
+        serializer = self.serializer_class(todo_set, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
     @extend_schema(
         summary="투두셋 추가",
         description="새로운 투두셋을 생성합니다.",
@@ -145,23 +259,46 @@ class TodoSetCreateView(APIView):
         tags=["TodoSets"],
     )
     def post(self, request):
-        # Placeholder implementation
-        return Response({"message": "Todo set created"}, status=status.HTTP_201_CREATED)
+        user = request.user
+        serializer = self.serializer_class(data=request.data)
+
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        todo_set = serializer.save(user=user)
+
+        serializer = self.serializer_class(todo_set)
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
-class TodoSetDeleteView(APIView):
+class TodoSetDetailView(APIView):
+
+    permission_classes = [IsAuthenticated]
+    serializer_class = TodoSetDetailSerializer
+
+    def get_object(self, set_id):
+        try:
+            todo_set = TodoSet.objects.get(pk=set_id)
+
+        except TodoSet.DoesNotExist:
+            raise NotFound
+
+        return todo_set
+
     @extend_schema(
-        summary="투두셋 삭제",
-        description="투두셋을 삭제합니다. Set 삭제시 하위 원소처리 관련 정책 적용",
-        responses={204: None},
+        summary="투두셋 디테일 조회",
+        description="특정 투두셋의 세부 정보를 조회합니다.",
+        responses={200: TodoSetDetailSerializer},
         tags=["TodoSets"],
     )
-    def delete(self, request, set_id):
-        # Placeholder implementation
-        return Response(status=status.HTTP_204_NO_CONTENT)
+    def get(self, request, set_id):
+        todo_set = self.get_object(set_id)
 
+        serializer = self.serializer_class(todo_set)
 
-class TodoSetUpdateView(APIView):
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
     @extend_schema(
         summary="투두셋 수정",
         description="투두셋을 수정합니다.",
@@ -170,33 +307,28 @@ class TodoSetUpdateView(APIView):
         tags=["TodoSets"],
     )
     def put(self, request, set_id):
-        # Placeholder implementation
-        return Response(
-            {"message": f"Todo set {set_id} updated"}, status=status.HTTP_200_OK
-        )
+        todo_set = self.get_object(set_id)
 
+        serializer = self.serializer_class(todo_set, data=request.data, partial=True)
 
-class TodoSetListView(APIView):
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        todo_set = serializer.save()
+
+        serializer = self.serializer_class(todo_set)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
     @extend_schema(
-        summary="투두셋 조회",
-        description="투두셋을 조회합니다.",
-        responses={200: TodoSetDetailSerializer(many=True)},
+        summary="투두셋 삭제",
+        description="투두셋을 삭제합니다. Set 삭제시 하위 원소처리 관련 정책 적용",
+        responses={204: None},
         tags=["TodoSets"],
     )
-    def get(self, request):
-        # Placeholder implementation
-        return Response({"message": "List of todo sets"}, status=status.HTTP_200_OK)
+    def delete(self, request, set_id):
+        todo_set = self.get_object(set_id)
 
+        todo_set.delete()
 
-class TodoSetDetailView(APIView):
-    @extend_schema(
-        summary="투두셋 디테일 조회",
-        description="특정 투두셋의 세부 정보를 조회합니다.",
-        responses={200: TodoSetDetailSerializer},
-        tags=["TodoSets"],
-    )
-    def get(self, request, set_id):
-        # Placeholder implementation
-        return Response(
-            {"message": f"Details of todo set {set_id}"}, status=status.HTTP_200_OK
-        )
+        return Response(status=status.HTTP_204_NO_CONTENT)
