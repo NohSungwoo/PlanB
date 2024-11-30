@@ -111,15 +111,21 @@ class MemoListView(APIView):
         else:  # not param.get("type[]"):
             pass
 
-        # TODO - `memo_set` filtering
-        if param.get("memo_set[]"):
-            memo_sets = map(int, param.getlist("memo_set[]"))
-            q = Q()
-            for i in memo_sets:
-                q |= Q(memo_set_id=int(i))
+        # `memo_set` filtering
+        try:
+            if param.get("memo_set[]"):
+                memo_sets = map(int, param.getlist("memo_set[]"))
+                q = Q()
+                for i in memo_sets:
+                    q |= Q(memo_set_id=i)
 
-            queryset = queryset.filter(q)
-            del q
+                queryset = queryset.filter(q)
+                del q
+        except ValueError:
+            return Response(
+                "memo_set[] query parameter가 유효하지 않습니다.",
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         # TODO - `tag` filtering
         if param.get("tag[]"):

@@ -78,13 +78,56 @@ class TestMemoList(TestAuthBase):
 
         response = self.client.get(
             self.URL,
-            query_params={
-                "year": 9999,
-                "month": 12,
-                "day": 1
-            },
+            query_params={"year": 9999, "month": 12, "day": 1},
         )
         self.assertEqual(len(response.data), 1)
+
+    def test_get_memos_with_memo_set(self):
+        """
+        query param의 `memo_set[]` 인자를 바탕으로 원하는
+        메모셋과 연관된 메모만 필터링합니다.
+        """
+        other_memo_set = MemoSet.objects.create(user=self.user, title="other_memo_set")
+
+        memo_in_default_set = Memo.objects.create(
+            memo_set=self.memo_set,
+            title="Test Memo in default memo set",
+            text="This memo belongs to the default memo set.",
+        )
+
+        memo_in_other_set = Memo.objects.create(
+            memo_set=other_memo_set,
+            title="Test Memo in OtherMemoSet",
+            text="This memo belongs to the other memo set.",
+        )
+
+        # default memo set 먼저
+        response = self.client.get(
+            self.URL, query_params={"memo_set[]": [self.memo_set.pk]}
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 2)
+
+        # other memo set
+        response = self.client.get(
+            self.URL, query_params={"memo_set[]": [other_memo_set.pk]}
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["title"], memo_in_other_set.title)
+
+        # 둘 다
+        response = self.client.get(
+            self.URL, query_params={"memo_set[]": [self.memo_set.pk, other_memo_set.pk]}
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 3)
+
+        # Error case: invalid query param
+        response = self.client.get(
+            self.URL, query_params={"memo_set[]": ["hello", "world"]}
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_create_memo(self):
         """Test creating a new Memo"""
