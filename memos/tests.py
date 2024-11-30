@@ -28,9 +28,9 @@ class TestMemoList(TestAuthBase):
 
     def test_get_memos(self):
         response = self.client.get(self.URL)
-        data = response.data
+        data = response.data[0]
         print(data)
-        expected_data = {"id": 1, "memo_set": 1, "title": "title", "content": "content"}
+        expected_data = {"id": 1, "memo_set": 1, "title": "title", "text": "text"}
 
         for expected_key, expected_value in expected_data.items():
             self.assertEqual(expected_value, data[expected_key])

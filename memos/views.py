@@ -76,20 +76,24 @@ class MemoListView(APIView):
         param = request.query_params
 
         # year 없는 month는 존재하지 않고 month 없는 day는 존재하지 않는다.
-        if param["year"]:
-            year = int(param["year"])
-            if param["month"]:
-                month = int(param["month"])
-                if param["day"]:
-                    day = int(param["day"])
+        if param.get("year"):
+            year = int(param.get("year"))
+
+            if param.get("month"):
+                month = int(param.get("month"))
+
+                if param.get("day"):  # year + month + day
+                    day = int(param.get("day"))
                     queryset.filter(created_at__date=datetime.date(year, month, day))
-                else:
+
+                else:  # year + month
                     queryset.filter(created_at__year=year, created_at__month=month)
-            else:
+
+            else:  # year
                 queryset.filter(created_at__year=year)
 
         # TODO - `type` filtering
-        if param["type[]"]:
+        if param.get("type[]"):
             types = param.getlist("type[]")
             for t in types:
                 match t:
@@ -100,11 +104,11 @@ class MemoListView(APIView):
                     case "":
                         pass
 
-        else:  # not param["type[]"]:
+        else:  # not param.get("type[]"):
             pass
 
         # TODO - `memo_set` filtering
-        if param["memo_set[]"]:
+        if param.get("memo_set[]"):
             memo_sets = map(int, param.getlist("memo_set[]"))
             q = Q()
             for i in memo_sets:
@@ -114,7 +118,7 @@ class MemoListView(APIView):
             del q
 
         # TODO - `tag` filtering
-        if param["tag[]"]:
+        if param.get("tag[]"):
             tags = param.getlist("tag[]")
             q = Q()
             for tag_title in tags:
@@ -124,7 +128,7 @@ class MemoListView(APIView):
             del q
 
         # TODO - `sort` created_at_asc, created_at_desc, updated_at_asc, updated_at_desc, title_asc, title_desc
-        match param["sort"]:
+        match param.get("sort"):
             case "created_at_asc":
                 queryset.order_by("created_at")
             case "created_at_desc":
@@ -138,7 +142,7 @@ class MemoListView(APIView):
             case "title_desc":
                 queryset.order_by("-title")
 
-        serializer = self.serializer_class(data=queryset, many=True)
+        serializer = self.serializer_class(queryset, many=True)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 

@@ -18,6 +18,7 @@ class MemoDetailSerializer(s.ModelSerializer):
     class Meta:
         model = Memo
         fields = (
+            "id",
             "title",
             "memo_set",
             "text",
