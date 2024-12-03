@@ -28,8 +28,8 @@ class TestMemoList(TestAuthBase):
         )
 
     def test_get_one_memo(self):
-        response = self.client.get(self.URL)
-        data = response.data[0]
+        response = self.client.get(self.URL + str(self.memo.pk) + "/")
+        data = response.data
         expected_data = {"id": 1, "memo_set": 1, "title": "title", "text": "text"}
 
         for expected_key, expected_value in expected_data.items():
@@ -158,6 +158,7 @@ class TestMemoList(TestAuthBase):
             self.assertEqual(response.data[attr], value)
 
         self.assertEqual(Memo.objects.count(), 2)
+    
 
     def test_create_memo_with_none_existent_schedule(self):
         """Test creating a new Memo will fail when non-existing schedule id is provided"""
@@ -212,7 +213,7 @@ class TestMemoDetail(TestAuthBase):
 
 class TestMemoSetList(TestAuthBase):
 
-    URL = "/api/v1/memos/set"
+    URL = "/api/v1/memos/set/"
 
     def setUp(self):
         super().setUp()
@@ -244,12 +245,12 @@ class TestMemoSetList(TestAuthBase):
 
 class TestMemoSetDetail(TestAuthBase):
 
-    URL = "/api/v1/memos/set"
+    URL = "/api/v1/memos/set/"
 
     def setUp(self):
         super().setUp()
         self.memo_set = MemoSet.objects.create(user=self.user, title="Test MemoSet")
-        self.url = f"{self.URL}/{self.memo_set.id}"
+        self.url = f"{self.URL}{self.memo_set.id}/"
 
     def test_get_memoset_detail(self):
         """Test fetching the details of a MemoSet"""

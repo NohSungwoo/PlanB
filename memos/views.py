@@ -9,6 +9,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from memos.models import Memo, MemoSet
+from users.models import User
 
 from .serializers import MemoDetailSerializer, MemoSetDetailSerializer
 
@@ -177,6 +178,10 @@ class MemoListView(APIView):
 
 
 class MemoDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = MemoDetailSerializer
+    queryset = Memo.objects.select_related("memo_set")
+
     @extend_schema(
         summary="메모 디테일 조회",
         description="특정 메모의 세부 정보를 조회합니다.",
@@ -184,10 +189,14 @@ class MemoDetailView(APIView):
         tags=["Memos"],
     )
     def get(self, request, memo_id):
-        # Placeholder implementation
-        return Response(
-            {"message": f"Details of memo {memo_id}"}, status=status.HTTP_200_OK
-        )
+        memo: Memo = self.queryset.get(pk=memo_id)
+        if not memo:
+            return Response(
+                {"message": "memo not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        serializer = self.serializer_class(instance=memo)
+        return Response(data=serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(
         summary="메모 수정",
