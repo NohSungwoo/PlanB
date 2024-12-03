@@ -1,5 +1,5 @@
 import datetime
-from django.core.exceptions import BadRequest
+from django.core.exceptions import BadRequest, ObjectDoesNotExist
 from django.db.models import F, Q
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
@@ -160,14 +160,12 @@ class MemoListView(APIView):
     @extend_schema(
         summary="메모 등록",
         description="새로운 메모를 등록합니다. \
-                등록시 메모타입 (일반, 캘린더, Todo)를 지정할 수 있습니다. \
                 등록시 MemoSet을 지정할 수 있습니다.",
         request=MemoDetailSerializer,
         responses={201: MemoDetailSerializer},
         tags=["Memos"],
     )
     def post(self, request):
-        # TODO - schedule, todo 연결 테스트 필요
         serializer = self.serializer_class(data=request.data)
 
         if not serializer.is_valid():
@@ -200,16 +198,33 @@ class MemoDetailView(APIView):
 
     @extend_schema(
         summary="메모 수정",
-        description="기존 메모의 내용을 수정합니다. 메모의 내용과 타입, 메모셋의 위치를 변경할 수 있습니다.",
+        description="기존 메모의 내용을 수정합니다. 메모의 내용과 타입, 메모셋의 위치를 변경할 수 있습니다. (Whole Update)",
         request=MemoDetailSerializer,
         responses={200: MemoDetailSerializer},
         tags=["Memos"],
     )
     def put(self, request, memo_id):
-        # Placeholder implementation
-        return Response(
-            {"message": f"Memo {memo_id} updated"}, status=status.HTTP_200_OK
-        )
+        try:
+            memo: Memo = self.queryset.get(pk=memo_id)
+
+            serializer = self.serializer_class(
+                memo,
+                data=request.data,
+            )
+            serializer.is_valid(raise_exception=True)
+
+            serializer.save()
+            return Response(data=serializer.data, status=status.HTTP_200_OK)
+
+        except ObjectDoesNotExist:
+            return Response(
+                {"message": "memo not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+        except ValidationError:
+            return Response(
+                {"message": "request is not valid 💀"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
     @extend_schema(
         summary="메모 삭제",

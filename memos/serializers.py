@@ -10,10 +10,8 @@ User = get_user_model()
 
 class MemoDetailSerializer(s.ModelSerializer):
     memo_set = s.PrimaryKeyRelatedField(queryset=MemoSet.objects.all())
-    memo_schedule = s.PrimaryKeyRelatedField(
-        queryset=Schedule.objects.all(), required=False
-    )
-    memo_todo = s.PrimaryKeyRelatedField(queryset=Todo.objects.all(), required=False)
+    memo_schedule = s.PrimaryKeyRelatedField(read_only=True)
+    memo_todo = s.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
         model = Memo
@@ -25,6 +23,12 @@ class MemoDetailSerializer(s.ModelSerializer):
             "memo_schedule",
             "memo_todo",
         )
+
+    def update(self, instance: Memo, validated_data) -> Memo:
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        return instance
 
 
 class MemoSetDetailSerializer(s.ModelSerializer):

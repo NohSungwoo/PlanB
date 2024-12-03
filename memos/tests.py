@@ -1,3 +1,4 @@
+from django.urls import reverse
 from django.contrib.auth import get_user_model
 from rest_framework import status
 
@@ -26,14 +27,6 @@ class TestMemoList(TestAuthBase):
             title="title",
             text="text",
         )
-
-    def test_get_one_memo(self):
-        response = self.client.get(self.URL + str(self.memo.pk) + "/")
-        data = response.data
-        expected_data = {"id": 1, "memo_set": 1, "title": "title", "text": "text"}
-
-        for expected_key, expected_value in expected_data.items():
-            self.assertEqual(expected_value, data[expected_key])
 
     def test_get_memos_with_year_month_day(self):
         ### do create sample memos
@@ -147,7 +140,6 @@ class TestMemoList(TestAuthBase):
         # 존재하는 태그를 쿼리할 경우
         response = self.client.get(self.URL, query_params={"tag[]": "sample_tag"})
         self.assertEqual(len(response.data), 1)
-        
 
     def test_create_memo(self):
         """Test creating a new Memo"""
@@ -158,57 +150,61 @@ class TestMemoList(TestAuthBase):
             self.assertEqual(response.data[attr], value)
 
         self.assertEqual(Memo.objects.count(), 2)
-    
-
-    def test_create_memo_with_none_existent_schedule(self):
-        """Test creating a new Memo will fail when non-existing schedule id is provided"""
-        # Providing a non-existing schedule id (assuming ID 999 does not exist)
-        payload = {
-            "title": "Test Memo with Invalid Schedule",
-            "text": "Text for memo",
-            "memo_set": 1,  # Valid memo_set id
-            "memo_schedule": 999,  # Assuming 999 is a non-existent schedule id
-        }
-        response = self.client.post(self.URL, payload)
-
-        # Check that the response status code is 400 Bad Request
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-        # Check that the error message indicates the schedule does not exist
-        self.assertIn(
-            "memo_schedule", response.data
-        )  # Assuming the error is returned in this field
-
-    def test_create_memo_with_none_existent_todo(self):
-        """Test creating a new Memo will fail when non-existing todo id is provided"""
-        # Providing a non-existing todo id (assuming ID 999 does not exist)
-        payload = {
-            "title": "Test Memo with Invalid Todo",
-            "text": "Text for memo with invalid todo",
-            "memo_set": 1,  # Assuming this is a valid memo_set id
-            "memo_todo": 999,  # Assuming 999 is a non-existent todo id
-        }
-        response = self.client.post(self.URL, payload)
-
-        # Check that the response status code is 400 Bad Request
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-        # Check that the error message indicates the todo does not exist
-        self.assertIn(
-            "memo_todo", response.data
-        )  # Assuming the error is returned in this field
-
-    def test_create_memo_with_schedule(self):
-        # TODO - Implement
-        pass
-
-    def test_create_memo_with_todo(self):
-        # TODO - Implement
-        pass
 
 
 class TestMemoDetail(TestAuthBase):
-    pass
+    URL = "/api/v1/memos/"
+
+    def setUp(self):
+        super().setUp()
+
+        # create a test memoset
+
+        self.memo_set = MemoSet.objects.create(user=self.user, title="TestMemoSet")
+
+        # create a test Memo
+
+        self.memo = Memo.objects.create(
+            memo_set=self.memo_set,
+            title="title",
+            text="text",
+        )
+
+        self.url = self.URL + str(self.memo.pk) + "/"
+
+    def test_get_one_memo(self):
+        response = self.client.get(self.url)
+        data = response.data
+        expected_data = {"id": 1, "memo_set": 1, "title": "title", "text": "text"}
+
+        for expected_key, expected_value in expected_data.items():
+            self.assertEqual(expected_value, data[expected_key])
+
+    def test_update_memo_success(self):
+        payload = {
+            "title": "Updated Title",
+            "text": "Updated Text",
+            "memo_set": self.memo_set.pk,
+        }
+        response = self.client.put(self.url, payload)
+
+        self.assertEqual(
+            response.status_code, status.HTTP_200_OK, response.data.get("message")
+        )
+
+        for attr, value in payload.items():
+            self.assertEqual(response.data[attr], value)
+
+    def test_update_memo_not_found(self):
+        invalid_url = reverse("memo-detail", args=[999])
+        response = self.client.put(invalid_url, {"title": "hello?"})
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_update_memo_invalid_data(self):
+        payload = {"titlle": "Two L in attribute!!! 💀💀💀💀"}
+        response = self.client.put(self.url, payload)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
 class TestMemoSetList(TestAuthBase):
