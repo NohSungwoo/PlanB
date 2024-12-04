@@ -47,7 +47,7 @@ class MemoListView(APIView):
             ),
             OpenApiParameter(
                 name="type[]",
-                description="메모 타입. 'schedule', 'todo', ''를 포함할 수 있습니다. ''는 아무 리소스에 연결되지 않은 메모임을 의미합니다. 다중인자를 허용합니다. null일 경우 ''를 함의합니다.",
+                description="메모 타입. 'schedule', 'todo', ''를 포함할 수 있습니다. ''는 아무 리소스에 연결되지 않은 메모임을 의미합니다. 다중인자를 허용합니다. null일 경우 필터링 없이 가져옵니다.",
                 required=False,
                 type=str,
                 many=True,
@@ -97,20 +97,24 @@ class MemoListView(APIView):
             else:  # year
                 queryset = queryset.filter(created_at__year=year)
 
-        # TODO - `type` filtering
-        if param.get("type[]"):
-            types = param.getlist("type[]")
-            for t in types:
-                match t:
-                    case "schedule":
-                        pass
-                    case "todo":
-                        pass
-                    case "":
-                        pass
+        # `type` filtering
+        if param.get("type[]") is not None:
+            types = set(param.getlist("type[]"))
+            excluded_types = {"todo", "schedule", ""} - types
 
-        else:  # not param.get("type[]"):
-            pass
+            q = Q()
+            for e in excluded_types:
+                # 여기서 e는 걸러질 타입을 의미한다!
+                match e:
+                    case "todo":
+                        q &= Q(memo_todo__isnull=True)
+                    case "schedule":
+                        q &= Q(memo_schedule__isnull=True)
+                    case "":
+                        q &= Q(memo_todo__isnull=False) | Q(memo_schedule__isnull=False)
+
+            queryset = queryset.filter(q)
+            del q
 
         # `memo_set` filtering
         try:

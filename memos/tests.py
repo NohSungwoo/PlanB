@@ -1,10 +1,15 @@
+import datetime
+import json
+import pprint
 from django.urls import reverse
 from django.contrib.auth import get_user_model
 from rest_framework import status
 
+from calendars.models import Calendar, Schedule
 from tags.models import Tag
 from memos.models import Memo, MemoSet
 from tests.auth_base_test import TestAuthBase
+from todos.models import Todo, TodoSet
 
 User = get_user_model()
 
@@ -140,6 +145,92 @@ class TestMemoList(TestAuthBase):
         # 존재하는 태그를 쿼리할 경우
         response = self.client.get(self.URL, query_params={"tag[]": "sample_tag"})
         self.assertEqual(len(response.data), 1)
+    
+    def __create_sample_memos_relates_to_schedule_and_todo(self):
+        """하나의 테스트케이스 마다 한 번의 request만 가능하기에 따로 뽑아놨습니다."""
+        # create schedule with related memos
+        self.schedule_related_memo = Memo.objects.create(
+            memo_set=self.memo_set, title="schedulememo1", text="schedulememo1"
+        )
+        calendar = Calendar.objects.create(user=self.user, title="calendar")
+        Schedule.objects.create(
+            calendar=calendar,
+            title="schedule",
+            start_date=datetime.date(2024, 12, 4),
+            memo=self.schedule_related_memo,
+        )
+
+        # create todo with related memos
+        self.todo_related_memo = Memo.objects.create(
+            memo_set=self.memo_set, title="todomemo1", text="todomemo1"
+        )
+        todo_set = TodoSet.objects.create(user=self.user, title="todoset")
+        Todo.objects.create(
+            todo_set=todo_set,
+            memo=self.todo_related_memo,
+            title="todo",
+            start_date=datetime.date(2024, 12, 4),
+        )
+
+        
+
+    def test_get_memos_with_types1(self):
+        """
+        type[] 필터링의 결과가 올바르게 되는지 확인합니다.
+
+        ## Example
+
+        ```
+        case ["schedule"]:
+            query will contain only schedule-related memos
+        ```
+        """
+        self.__create_sample_memos_relates_to_schedule_and_todo()
+
+        # it should only give schedule_related_memo if `type[]=schedule` query param has entered
+        response = self.client.get(self.URL, query_params={"type[]": "schedule"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.data
+        self.assertEqual(len(data), 1, str(data))
+        self.assertEqual(self.schedule_related_memo.title, data[0].get("title"))
+    
+    def test_get_memos_with_types2(self):
+        """
+        type[] 필터링의 결과가 올바르게 되는지 확인합니다.
+
+        ## Example
+
+        ```
+        case ["schedule", ""]:
+            query will contain schedule-related memos and standalone memos.
+        ```
+        """
+        self.__create_sample_memos_relates_to_schedule_and_todo()
+
+        # it should give todo_related_memo and standalone memo
+        # if `type[]=schedule&type[]=` query param has entered
+        response = self.client.get(self.URL, query_params={"type[]": ["schedule", ""]})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 2, str(response.data))
+
+    def test_get_memos_with_types3(self):
+        """
+        type[] 필터링의 결과가 올바르게 되는지 확인합니다.
+
+        ## Example
+
+        ```
+        case [""]:
+            query will contain only standalone memos.
+        ```
+        """
+        self.__create_sample_memos_relates_to_schedule_and_todo()
+
+        # it should give standalone memo if `type[]=schedule&type[]=todo` query param has entered
+        response = self.client.get(self.URL, query_params={"type[]": [""]})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1, str(response.data))
+        self.assertEqual(response.data[0]["title"], self.memo.title)
 
     def test_create_memo(self):
         """Test creating a new Memo"""
