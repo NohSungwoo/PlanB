@@ -440,6 +440,12 @@ class TestMemoDetail(TestAuthBase):
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(len(Memo.objects.all()), 0)
 
+    def test_delete_memo_not_found(self):
+        invalid_url = reverse("memo-detail", args=[999])
+        response = self.client.delete(invalid_url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(len(Memo.objects.all()), 1)
+        
 class TestMemoSetList(TestAuthBase):
 
     URL = "/api/v1/memos/set/"
