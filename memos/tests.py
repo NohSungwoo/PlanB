@@ -300,18 +300,45 @@ class TestMemoList(TestAuthBase):
             for i in range(1, COUNT + 1)
         ]
 
-        # update each memos's update_at reversly
-        for i, memo in enumerate(reversed(memos)):
+        # update each memos's update_at sequentially
+        for i, memo in enumerate(memos):
             memo.title = str(f"hi {i}")
             memo.save(force_update=True)
 
-        # it should give reversed result when sort with "updated_at_asc"
+        # it should give sequential result when sort with "updated_at_asc"
         response = self.client.get(self.URL, query_params={"sort": "updated_at_asc"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), COUNT)
+
+        for i, memo in enumerate(memos):
+            self.assertEqual(response.data[i]["id"], memo.id)
+
+    def test_get_memos_order_by_updated_at_desc(self):
+        """order_by("-updated_at")"""
+        COUNT = 10
+
+        # remove default memo
+        self.memo.delete()
+
+        memos = [
+            Memo.objects.create(memo_set=self.memo_set, title=str(i), text=str(i))
+            for i in range(1, COUNT + 1)
+        ]
+
+        # update each memos's update_at sequentially:
+        # updated_at must be monotonically increasing
+        for i, memo in enumerate(memos):
+            memo.title = str(f"hi {i}")
+            memo.save(force_update=True)
+
+        # it should give reversed result when sort with "updated_at_desc"
+        response = self.client.get(self.URL, query_params={"sort": "updated_at_desc"})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), COUNT)
 
         for i, memo in enumerate(reversed(memos)):
             self.assertEqual(response.data[i]["id"], memo.id)
+
 
 class TestMemoDetail(TestAuthBase):
     URL = "/api/v1/memos/"
