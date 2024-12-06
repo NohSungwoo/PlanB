@@ -237,9 +237,10 @@ class MemoDetailView(APIView):
         tags=["Memos"],
     )
     def delete(self, request, memo_id):
-        memo: Memo = self.queryset.get(pk=memo_id)
+        try:
+            memo: Memo = self.queryset.get(pk=memo_id)
 
-        if not memo:
+        except ObjectDoesNotExist:
             return Response({"message": "memo not found"}, status.HTTP_404_NOT_FOUND)
 
         serializer = self.serializer_class(instance=memo)
