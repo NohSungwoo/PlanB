@@ -142,7 +142,7 @@ class MemoListView(APIView):
             queryset = queryset.filter(q)
             del q
 
-        # TODO - `sort` created_at_asc, created_at_desc, updated_at_asc, updated_at_desc, title_asc, title_desc
+        # `sort` created_at_asc, created_at_desc, updated_at_asc, updated_at_desc, title_asc, title_desc
         match param.get("sort"):
             case "created_at_asc":
                 queryset = queryset.order_by("created_at")

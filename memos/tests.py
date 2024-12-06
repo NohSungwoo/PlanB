@@ -339,6 +339,26 @@ class TestMemoList(TestAuthBase):
         for i, memo in enumerate(reversed(memos)):
             self.assertEqual(response.data[i]["id"], memo.id)
 
+    def test_get_memos_order_by_title_asc(self):
+        COUNT = 10
+
+        # remove default memo
+        self.memo.delete()
+
+        # memos.title will be: ["a", "b", "c", ...]
+        memos = [
+            Memo.objects.create(memo_set=self.memo_set, title=chr(i), text=chr(i))
+            for i in range(ord("a"), ord("a") + COUNT)
+        ]
+
+        # it should give sequential result when sort with "title_asc"
+        response = self.client.get(self.URL, query_params={"sort": "title_asc"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), COUNT)
+
+        for i, memo in enumerate(memos):
+            self.assertEqual(response.data[i]["id"], memo.id)
+
 
 class TestMemoDetail(TestAuthBase):
     URL = "/api/v1/memos/"
