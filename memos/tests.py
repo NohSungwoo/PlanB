@@ -145,7 +145,7 @@ class TestMemoList(TestAuthBase):
         # 존재하는 태그를 쿼리할 경우
         response = self.client.get(self.URL, query_params={"tag[]": "sample_tag"})
         self.assertEqual(len(response.data), 1)
-    
+
     def __create_sample_memos_relates_to_schedule_and_todo(self):
         """하나의 테스트케이스 마다 한 번의 request만 가능하기에 따로 뽑아놨습니다."""
         # create schedule with related memos
@@ -172,8 +172,6 @@ class TestMemoList(TestAuthBase):
             start_date=datetime.date(2024, 12, 4),
         )
 
-        
-
     def test_get_memos_with_types1(self):
         """
         type[] 필터링의 결과가 올바르게 되는지 확인합니다.
@@ -193,7 +191,7 @@ class TestMemoList(TestAuthBase):
         data = response.data
         self.assertEqual(len(data), 1, str(data))
         self.assertEqual(self.schedule_related_memo.title, data[0].get("title"))
-    
+
     def test_get_memos_with_types2(self):
         """
         type[] 필터링의 결과가 올바르게 되는지 확인합니다.
@@ -241,6 +239,33 @@ class TestMemoList(TestAuthBase):
             self.assertEqual(response.data[attr], value)
 
         self.assertEqual(Memo.objects.count(), 2)
+
+    def test_get_memos_order_by_create_at_asc(self):
+        """order_by("created_at")"""
+        COUNT = 10
+        FROM_YEAR = 9999
+
+        # remove default memo
+        self.memo.delete()
+
+        memos = [
+            Memo.objects.create(memo_set=self.memo_set, title=str(i), text=str(i))
+            for i in range(1, COUNT + 1)
+        ]
+
+        # update each memos's created_at reversly
+        for i, memo in enumerate(memos):
+            year = FROM_YEAR - i
+            memo.created_at = datetime.datetime(year, 1, 1)
+            memo.save(force_update=True)
+
+        # it should give reversed result when sort with "created_at_asc"
+        response = self.client.get(self.URL, query_params={"sort": "created_at_asc"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), COUNT)
+
+        for i, memo in enumerate(reversed(memos)):
+            self.assertEqual(response.data[i]["id"], memo.id)
 
 
 class TestMemoDetail(TestAuthBase):
