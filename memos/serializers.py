@@ -1,17 +1,34 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers as s
 
+from calendars.models import Schedule
 from memos.models import Memo, MemoSet
+from todos.models import Todo
 
 User = get_user_model()
 
 
 class MemoDetailSerializer(s.ModelSerializer):
-    memo_set = s.PrimaryKeyRelatedField(read_only=True)
+    memo_set = s.PrimaryKeyRelatedField(queryset=MemoSet.objects.all())
+    memo_schedule = s.PrimaryKeyRelatedField(read_only=True)
+    memo_todo = s.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
         model = Memo
-        fields = "__all__"
+        fields = (
+            "id",
+            "title",
+            "memo_set",
+            "text",
+            "memo_schedule",
+            "memo_todo",
+        )
+
+    def update(self, instance: Memo, validated_data) -> Memo:
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        return instance
 
 
 class MemoSetDetailSerializer(s.ModelSerializer):
