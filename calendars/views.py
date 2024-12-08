@@ -47,7 +47,9 @@ class CalendarListView(APIView):
         tags=["Calendars"],
     )
     def post(self, request):
-        serializer = self.serializer_class(data=request.data)
+        serializer = self.serializer_class(
+            data=request.data, context={"request": request}
+        )
         if not serializer.is_valid():
             return Response(
                 {"message": "Invalid Request 💀"}, status=status.HTTP_400_BAD_REQUEST
@@ -81,7 +83,7 @@ class CalendarDetailView(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
 
         except ObjectDoesNotExist:
-            raise NotFound(message="해당 캘린더가 존재하지 않습니다.")
+            raise NotFound(detail={"message": "해당 캘린더가 존재하지 않습니다."})
 
     @extend_schema(
         summary="캘린더 속성 수정",
