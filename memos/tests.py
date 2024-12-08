@@ -152,9 +152,9 @@ class TestMemoList(TestAuthBase):
         self.schedule_related_memo = Memo.objects.create(
             memo_set=self.memo_set, title="schedulememo1", text="schedulememo1"
         )
-        calendar = Calendar.objects.create(user=self.user, title="calendar")
-        Schedule.objects.create(
-            calendar=calendar,
+        self.calendar = Calendar.objects.create(user=self.user, title="calendar")
+        self.schedule = Schedule.objects.create(
+            calendar=self.calendar,
             title="schedule",
             start_date=datetime.date(2024, 12, 4),
             memo=self.schedule_related_memo,
@@ -164,9 +164,9 @@ class TestMemoList(TestAuthBase):
         self.todo_related_memo = Memo.objects.create(
             memo_set=self.memo_set, title="todomemo1", text="todomemo1"
         )
-        todo_set = TodoSet.objects.create(user=self.user, title="todoset")
-        Todo.objects.create(
-            todo_set=todo_set,
+        self.todo_set = TodoSet.objects.create(user=self.user, title="todoset")
+        self.todo = Todo.objects.create(
+            todo_set=self.todo_set,
             memo=self.todo_related_memo,
             title="todo",
             start_date=datetime.date(2024, 12, 4),
@@ -191,6 +191,10 @@ class TestMemoList(TestAuthBase):
         data = response.data
         self.assertEqual(len(data), 1, str(data))
         self.assertEqual(self.schedule_related_memo.title, data[0].get("title"))
+
+        # it should have pk for sample schedule.
+        self.assertEqual(data[0]["memo_schedule"], self.schedule.pk)
+        self.assertEqual(data[0]["memo_todo"], None)
 
     def test_get_memos_with_types2(self):
         """
@@ -445,7 +449,8 @@ class TestMemoDetail(TestAuthBase):
         response = self.client.delete(invalid_url)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertEqual(len(Memo.objects.all()), 1)
-        
+
+
 class TestMemoSetList(TestAuthBase):
 
     URL = "/api/v1/memos/set/"
