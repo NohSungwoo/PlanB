@@ -11,7 +11,7 @@ from .views import (
 
 calendar_urls = [
     path(
-        "<str:calendar_name>",
+        "<str:calendar_name>/",
         CalendarDetailView.as_view(),
         name="calendar-detail",
     ),
@@ -19,18 +19,18 @@ calendar_urls = [
 ]
 
 schedule_urls = [
-    path("schedule", ScheduleListView.as_view(), name="schedule-list"),
+    path("schedule/", ScheduleListView.as_view(), name="schedule-list"),
     path(
-        "schedule/<int:schedule_id>",
+        "schedule/<int:schedule_id>/",
         ScheduleDetailView.as_view(),
         name="schedule-detail",
     ),
     path(
-        "schedule/<int:schedule_id>/copy",
+        "schedule/<int:schedule_id>/copy/",
         ScheduleCopyView.as_view(),
         name="schedule-copy",
     ),
-    path("schedule/search", ScheduleSearchView.as_view(), name="schedule-search"),
+    path("schedule/search/", ScheduleSearchView.as_view(), name="schedule-search"),
 ]
 
 urlpatterns = calendar_urls + schedule_urls
