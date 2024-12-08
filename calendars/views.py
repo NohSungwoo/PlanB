@@ -119,8 +119,16 @@ class CalendarDetailView(APIView):
         tags=["Calendars"],
     )
     def delete(self, request, calendar_name):
-        # Placeholder implementation
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        try:
+            instance = self.queryset.get(user=request.user, title=calendar_name)
+
+            serializer = self.serializer_class(instance=instance)
+            instance.delete()
+
+            return Response(serializer.data, status=status.HTTP_204_NO_CONTENT)
+
+        except ObjectDoesNotExist:
+            raise NotFound(detail={"message": "캘린더가 존재하지 않습니다."})
 
 
 class ScheduleCopyView(APIView):
