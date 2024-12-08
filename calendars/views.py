@@ -32,7 +32,10 @@ class CalendarListView(APIView):
         tags=["Calendars"],
     )
     def get(self, request):
-        return Response({"message": "캘린더 목록 조회완료!"}, status=status.HTTP_200_OK)
+        queryset = self.queryset.filter(user=request.user)
+        serializer = self.serializer_class(instance=queryset, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(
         summary="캘린더 생성",
