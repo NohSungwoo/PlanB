@@ -3,8 +3,11 @@ from datetime import date
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
 from rest_framework.generics import ListAPIView
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+from calendars.models import Calendar
 
 from .serializers import (
     CalendarDetailSerializer,
@@ -17,6 +20,10 @@ class CalendarListView(APIView):
     """
     캘린더들에 대한 작업을 처리합니다. 모든 캘린더를 조회하거나 새 캘린더를 추가합니다.
     """
+
+    permission_classes = [IsAuthenticated]
+    serializer_class = CalendarDetailSerializer
+    queryset = Calendar.objects.all()
 
     @extend_schema(
         summary="캘린더 목록 조회",
@@ -35,8 +42,14 @@ class CalendarListView(APIView):
         tags=["Calendars"],
     )
     def post(self, request):
-        # Placeholder implementation
-        return Response({"message": "Calendar created"}, status=status.HTTP_201_CREATED)
+        serializer = self.serializer_class(data=request.data)
+        if not serializer.is_valid():
+            return Response(
+                {"message": "Invalid Request 💀"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        serializer.save(user=request.user)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class CalendarDetailView(APIView):
