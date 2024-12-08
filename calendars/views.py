@@ -3,7 +3,7 @@ from datetime import date
 from django.core.exceptions import ObjectDoesNotExist
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -85,17 +85,32 @@ class CalendarDetailView(APIView):
 
     @extend_schema(
         summary="캘린더 속성 수정",
-        description="캘린더의 속성을 수정합니다.",
+        description="캘린더의 속성을 수정합니다. Whole update",
         request=CalendarDetailSerializer,
         responses={200: CalendarDetailSerializer},
         tags=["Calendars"],
     )
     def put(self, request, calendar_name):
-        # Placeholder implementation
-        return Response(
-            {"message": f"Updated properties for calendar {calendar_name}"},
-            status=status.HTTP_200_OK,
-        )
+        try:
+            instance = self.queryset.get(user=request.user, title=calendar_name)
+
+            serializer = self.serializer_class(
+                instance=instance,
+                data=request.data,
+                partial=False,
+                context={"request": request},
+            )
+
+            if not serializer.is_valid():
+                raise ValidationError(serializer.errors)
+
+            updated_instance = serializer.save()
+            serializer = self.serializer_class(updated_instance)
+
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        except ObjectDoesNotExist:
+            raise NotFound(detail={"message": "캘린더가 존재하지 않습니다."})
 
     @extend_schema(
         summary="캘린더 삭제",
