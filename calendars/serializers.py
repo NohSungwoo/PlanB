@@ -1,5 +1,9 @@
+from random import choice
+from types import FunctionType
+from typing import Self
 from django.contrib.auth import get_user_model
 from rest_framework import serializers as s
+from rest_framework.fields import ChoiceField
 
 from calendars.models import Calendar, Schedule
 from memos.models import Memo
@@ -72,3 +76,25 @@ class ScheduleUpdateSerializer(s.ModelSerializer):
             "calendar",
             "participant",
         )
+
+
+class ScheduleViewChoices(s.Serializer):
+    """
+    ScheduleListView GET 요청의 query_params 중에서 `view` Choices를 명시하기 위해 사용되는 serializer 입니다.
+    """
+
+    view = ChoiceField(
+        choices=(
+            "monthly",
+            "daily",
+            "weekly",
+        )
+    )
+
+
+class ScheduleDirectionChoices(s.Serializer):
+    """
+    ScheduleListView GET 요청의 query_params 중에서 `direction` Choices를 명시하기 위해 사용하는 serializer 입니다.
+    """
+
+    direction = ChoiceField(choices=("next", "previous"))

@@ -14,6 +14,8 @@ from calendars.models import Calendar, Schedule
 from .serializers import (
     CalendarDetailSerializer,
     ScheduleDetailSerializer,
+    ScheduleDirectionChoices,
+    ScheduleViewChoices,
     ScheduleUpdateSerializer,
 )
 
@@ -164,7 +166,23 @@ class ScheduleListView(ListAPIView):
                 type=date,
             ),
             OpenApiParameter(
-                name="end_date", description="조회 종료 날짜", required=True, type=date
+                name="view",
+                description="뷰 타입으로, 일간(daily), 주간(weekly) 혹은 월간(monthly)으로 세팅합니다. 기본값은 월간입니다.",
+                required=False,
+                type=ScheduleViewChoices,
+            ),
+            OpenApiParameter(
+                name="page",
+                description="페이지 번호를 입력합니다. 1부터 세며, 기본값은 1입니다. 0보다 큰 정수를 허용합니다.",
+                required=False,
+                type=int,
+                default=1,
+            ),
+            OpenApiParameter(
+                name="direction",
+                description="페이지 조회시 순방향(next) 혹은 역방향(previous으로 이동하는 옵션입니다. 기본값은 next 입니다.",
+                required=False,
+                type=ScheduleDirectionChoices,
             ),
             OpenApiParameter(
                 name="calendar",
@@ -177,8 +195,34 @@ class ScheduleListView(ListAPIView):
         tags=["Schedules"],
     )
     def get(self, request):
-        # Placeholder implementation
-        return Response({"message": "List of schedules"}, status=status.HTTP_200_OK)
+        user = request.user
+        queryset = self.queryset.filter(calendar__user_id=user.id)
+
+        param = request.query_params
+
+        if param.get("start_date"):
+            # !TODO
+            pass
+
+        if param.get("calendar"):
+            # !TODO
+            pass
+
+        if param.get("view"):
+            # !TODO
+            pass
+
+        if param.get("page"):
+            # !TODO
+            pass
+
+        if param.get("direction"):
+            # !TODO
+            pass
+
+        serializer = self.serializer_class(instance=queryset, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(
         summary="일정 등록",
