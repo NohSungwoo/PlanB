@@ -2,6 +2,8 @@ from django.contrib.auth import get_user_model
 from rest_framework import serializers as s
 
 from calendars.models import Calendar, Schedule
+from memos.models import Memo
+from memos.serializers import MemoDetailSerializer
 
 User = get_user_model()
 
@@ -39,11 +41,9 @@ class CalendarDetailSerializer(s.ModelSerializer):
 
 
 class ScheduleDetailSerializer(s.ModelSerializer):
-    participant = s.SlugRelatedField(slug_field="email", read_only=True, many=True)
-    memo = s.HyperlinkedRelatedField(
-        view_name="memo-detail", read_only=True, allow_null=True
-    )
-    calendar = s.HyperlinkedRelatedField(view_name="title", read_only=True, many=False)
+    participant = s.PrimaryKeyRelatedField(read_only=True, many=True)
+    memo = MemoDetailSerializer(required=False)
+    calendar = s.PrimaryKeyRelatedField(read_only=True, many=False)
 
     class Meta:
         model = Schedule

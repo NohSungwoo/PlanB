@@ -1,6 +1,6 @@
 from datetime import date
 
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import BadRequest, ObjectDoesNotExist
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
 from rest_framework.exceptions import NotFound, ValidationError
@@ -9,7 +9,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from calendars.models import Calendar
+from calendars.models import Calendar, Schedule
 
 from .serializers import (
     CalendarDetailSerializer,
@@ -149,6 +149,10 @@ class ScheduleCopyView(APIView):
 
 
 class ScheduleListView(ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = ScheduleDetailSerializer
+    queryset = Schedule.objects.select_related("calendar")
+
     @extend_schema(
         summary="일정 조회",
         description="기간 내의 일정을 조회합니다. 일간 보기, 주간 보기, 월간 보기 기능이 있으며, 날짜를 기준으로 Pagination을 지원합니다. 원하는 캘린더들을 선택하여 요청을 보낼 수 있습니다.",
@@ -184,8 +188,13 @@ class ScheduleListView(ListAPIView):
         tags=["Schedules"],
     )
     def post(self, request):
-        # Placeholder implementation
-        return Response({"message": "Schedule created"}, status=status.HTTP_201_CREATED)
+        serializer = self.serializer_class(data=request.data)
+        if not serializer.is_valid():
+            raise BadRequest(serializer.errors)
+
+        serializer.save()
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class ScheduleSearchView(APIView):
