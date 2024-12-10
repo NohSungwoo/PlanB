@@ -2,7 +2,6 @@ from django.utils import timezone
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
 from rest_framework.exceptions import NotFound
-from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -15,7 +14,7 @@ from .serializers import (
 )
 
 
-class TodoListView(ListAPIView):
+class TodoListView(APIView):
 
     permission_classes = [IsAuthenticated]
     serializer_class = TodoDetailSerializer
@@ -26,7 +25,7 @@ class TodoListView(ListAPIView):
         parameters=[
             OpenApiParameter(
                 name="todo_set_id",
-                description="필터링할 Todo Set ID",
+                description="필터링 할 Todo Set ID",
                 required=False,
                 type=int,
             ),
@@ -162,8 +161,12 @@ class TodoStatusUpdateView(APIView):
         except Todo.DoesNotExist:
             raise NotFound
 
-        todo.complete_date = timezone.localtime()
-        todo.save()
+        if todo.complete_date:
+            todo.complete_date = None
+            todo.save()
+        else:
+            todo.complete_date = timezone.localtime()
+            todo.save()
 
         serializer = self.serializer_class(todo)
 
@@ -219,11 +222,12 @@ class SubTodoStatusView(APIView):
         except SubTodo.DoesNotExist:
             raise NotFound
 
-        complete_date = timezone.localtime()
-
-        sub_todo.complete_date = complete_date
-
-        sub_todo.save()
+        if sub_todo.complete_date:
+            sub_todo.complete_date = None
+            sub_todo.save()
+        else:
+            sub_todo.complete_date = timezone.localtime()
+            sub_todo.save()
 
         serializer = self.serializer_class(sub_todo)
 

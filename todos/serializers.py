@@ -38,19 +38,29 @@ class SubTodoDetailSerializer(s.ModelSerializer):
         except Todo.DoesNotExist:
             raise NotFound
 
-        sub_todo_memo = validated_data.pop("memo")
+        sub_todo_memo = validated_data.pop("memo", None)
         sub_todo_title = validated_data.pop("title")
         sub_todo_start_date = validated_data.pop("start_date")
 
-        memo_title = sub_todo_memo.pop("title")
-        memo_text = sub_todo_memo.pop("text")
-        memo_set = sub_todo_memo.pop("memo_set")
+        if sub_todo_memo:
+            memo_title = sub_todo_memo.pop("title")
+            memo_text = sub_todo_memo.pop("text")
+            memo_set = sub_todo_memo.pop("memo_set")
 
-        memo = Memo.objects.create(title=memo_title, text=memo_text, memo_set=memo_set)
+            memo = Memo.objects.create(
+                title=memo_title, text=memo_text, memo_set=memo_set
+            )
 
-        sub_todo = SubTodo.objects.create(
-            todo=todo, memo=memo, title=sub_todo_title, start_date=sub_todo_start_date
-        )
+            sub_todo = SubTodo.objects.create(
+                todo=todo,
+                memo=memo,
+                title=sub_todo_title,
+                start_date=sub_todo_start_date,
+            )
+        else:
+            sub_todo = SubTodo.objects.create(
+                todo=todo, title=sub_todo_title, start_date=sub_todo_start_date
+            )
 
         return sub_todo
 
@@ -97,18 +107,20 @@ class TodoDetailSerializer(s.ModelSerializer):
     def update(self, instance, validated_data):
         todo = instance
         todo_set = validated_data.pop("todo_set")
-        memo = validated_data.pop("memo")
+        memo = validated_data.pop("memo", None)
         todo_title = validated_data.pop("title")
         todo_start_date = validated_data.pop("start_date")
 
         todo.todo_set = todo_set
-        todo.memo.title = memo.pop("title")
-        todo.memo.text = memo.pop("text")
-        todo.memo.memo_set = memo.pop("memo_set")
         todo.title = todo_title
         todo.start_date = todo_start_date
 
-        todo.memo.save()
+        if memo:
+            todo.memo.title = memo.pop("title")
+            todo.memo.text = memo.pop("text")
+            todo.memo.memo_set = memo.pop("memo_set")
+            todo.memo.save()
+
         todo.save()
 
         return todo
