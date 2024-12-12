@@ -47,7 +47,7 @@ class CalendarDetailSerializer(s.ModelSerializer):
 class ScheduleDetailSerializer(s.ModelSerializer):
     participant = s.PrimaryKeyRelatedField(read_only=True, many=True)
     memo = MemoDetailSerializer(required=False)
-    calendar = s.PrimaryKeyRelatedField(read_only=True, many=False)
+    calendar = s.PrimaryKeyRelatedField(queryset=Calendar.objects.all(), many=False)
 
     class Meta:
         model = Schedule

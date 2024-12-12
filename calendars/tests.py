@@ -109,6 +109,19 @@ class TestScheduleList(TestAuthBase):
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["title"], self.schedule.title)
 
+    def test_create_schedule_without_memo(self):
+        payload = {
+            "calendar": self.calendar.pk,
+            "title": "schedule1",
+            "start_date": "9999-12-31",
+        }
+        response = self.client.post(self.URL, data=payload)
+        self.assertEqual(
+            response.status_code, status.HTTP_201_CREATED, response.content
+        )
+        for key in payload.keys():
+            self.assertIn(key, response.data)
+
 
 class TestScheduleDetail(TestAuthBase):
     pass
