@@ -1,8 +1,11 @@
+from datetime import datetime
 from rest_framework import reverse, status
 from rest_framework.authentication import get_user_model
 
-from calendars.models import Calendar
+from calendars.models import Calendar, Schedule
+from memos.models import MemoSet
 from tests.auth_base_test import TestAuthBase
+from todos.models import TodoSet
 
 
 User = get_user_model()
@@ -33,19 +36,19 @@ class TestCalendarList(TestAuthBase):
     def test_create_calendar_invalid(self):
         payload = {}  # 타이틀 누락
         response = self.client.post(self.URL, data=payload)
-        
+
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(Calendar.objects.count(), 1)
-    
+
     def test_create_calendar_duplicated(self):
-        payload = {"title": "Calendar1"} # sample calendar와 동일한 이름
+        payload = {"title": "Calendar1"}  # sample calendar와 동일한 이름
         response = self.client.post(self.URL, data=payload)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(Calendar.objects.count(), 1)
 
 
 class TestCalendarDetail(TestAuthBase):
-    URL = "/api/v1/calendars/"
+    URL = "/api/v1/calendars/name/"
 
     def setUp(self):
         super().setUp()

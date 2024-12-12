@@ -1,6 +1,6 @@
 from datetime import date
 
-from django.core.exceptions import BadRequest, ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
 from rest_framework.exceptions import NotFound, ValidationError
@@ -234,7 +234,7 @@ class ScheduleListView(ListAPIView):
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
         if not serializer.is_valid():
-            raise BadRequest(serializer.errors)
+            raise ValidationError(serializer.errors)
 
         serializer.save()
 
