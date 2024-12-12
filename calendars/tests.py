@@ -85,3 +85,30 @@ class TestCalendarDetail(TestAuthBase):
         response = self.client.delete(self.url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertFalse(Calendar.objects.filter(id=self.calendar.id).exists())
+
+
+class TestScheduleList(TestAuthBase):
+    URL = "/api/v1/calendars/schedule/"
+
+    def setUp(self):
+        super().setUp()
+
+        # create sample **_set
+        self.memo_set = MemoSet.objects.create(title="memo_set", user=self.user)
+        self.calendar = Calendar.objects.create(title="calendar", user=self.user)
+        self.todo_set = TodoSet.objects.create(title="todo_set", user=self.user)
+
+        # create sample schedule
+        self.schedule = Schedule.objects.create(
+            calendar=self.calendar, title="scheudle", start_date=datetime(2024, 12, 12)
+        )
+
+    def test_get_sample_schedule(self):
+        response = self.client.get(self.URL)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["title"], self.schedule.title)
+
+
+class TestScheduleDetail(TestAuthBase):
+    pass
