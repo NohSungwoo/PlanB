@@ -35,6 +35,13 @@ class TestCalendarList(TestAuthBase):
         response = self.client.post(self.URL, data=payload)
         
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(Calendar.objects.count(), 1)
+    
+    def test_create_calendar_duplicated(self):
+        payload = {"title": "Calendar1"} # sample calendar와 동일한 이름
+        response = self.client.post(self.URL, data=payload)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(Calendar.objects.count(), 1)
 
 
 class TestCalendarDetail(TestAuthBase):

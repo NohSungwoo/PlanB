@@ -54,7 +54,7 @@ class CalendarListView(APIView):
         )
         if not serializer.is_valid():
             return Response(
-                {"message": "Invalid Request 💀"}, status=status.HTTP_400_BAD_REQUEST
+                serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
 
         serializer.save(user=request.user)

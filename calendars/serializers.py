@@ -31,7 +31,7 @@ class CalendarDetailSerializer(s.ModelSerializer):
         title = data.get("title")
         if self.Meta.model.objects.filter(user=user, title=title).exists():
             raise s.ValidationError(
-                {"title": f"해당 유저에 타이틀 '{title}'이 이미 존재합니다."}
+                {"title": f"해당 유저에 타이틀 '{title}'이/가 이미 존재합니다."}
             )
 
         return data
