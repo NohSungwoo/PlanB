@@ -16,9 +16,9 @@ class TestTodoListView(TestAuthBase):
     def setUp(self):
         super().setUp()
 
-        self.memo_set = MemoSet.objects.create(user=self.user, title="test_memo_set")
-        self.todo_set = TodoSet.objects.create(user=self.user, title="test_todo_set")
-        self.calendar = Calendar.objects.create(user=self.user, title="test_calendar")
+        self.memo_set = MemoSet.objects.create(user=self.user, title="Memo")
+        self.todo_set = TodoSet.objects.create(user=self.user, title="Todo")
+        self.calendar = Calendar.objects.create(user=self.user, title="Calendar")
 
     def test_create_todo(self):
         response = self.client.post(
@@ -67,16 +67,7 @@ class TestTodoListView(TestAuthBase):
         self.assertEqual(data, {"start_date": ["필수 항목입니다."]})
 
     def test_get_todo_list(self):
-        self.client.post(
-            self.URL,
-            data={
-                "todo_set": 1,
-                "memo": {"title": "test_memo", "text": "test", "memo_set": 1},
-                "title": "test_todo",
-                "start_date": timezone.localtime(),
-            },
-            format="json",
-        )
+        self.test_create_todo()
 
         response = self.client.get(self.URL)
 
@@ -90,12 +81,12 @@ class TestTodoDetailView(TestAuthBase):
     def setUp(self):
         super().setUp()
 
-        TodoSet.objects.create(user=self.user, title="test_todo_set")
-        MemoSet.objects.create(user=self.user, title="test_memo_set")
-        Calendar.objects.create(user=self.user, title="test_calendar")
+        self.todo_set = TodoSet.objects.create(user=self.user, title="Todo")
+        self.memo_set = MemoSet.objects.create(user=self.user, title="Memo")
+        self.calendar = Calendar.objects.create(user=self.user, title="Calendar")
 
         self.todo = Todo.objects.create(
-            title="test_todo", start_date=timezone.localtime()
+            todo_set=self.todo_set, title="test_todo", start_date=timezone.localtime()
         )
 
     def test_get_todo(self):
@@ -113,12 +104,10 @@ class TestTodoDetailView(TestAuthBase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_update_todo(self):
-        TodoSet.objects.create(user=self.user, title="test_todo_set2")
-
         response = self.client.put(
             self.URL,
             data={
-                "todo_set": 2,
+                "todo_set": self.todo_set.pk,
                 "title": "update_title",
                 "start_date": timezone.localtime(),
             },
@@ -128,7 +117,7 @@ class TestTodoDetailView(TestAuthBase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         self.assertEqual(data.pop("id"), 1)
-        self.assertEqual(data.pop("todo_set"), 2)
+        self.assertEqual(data.pop("todo_set"), 1)
         self.assertEqual(data.pop("title"), "update_title")
 
     def test_update_data_invalid(self):
@@ -160,7 +149,7 @@ class TestTodoStatusUpdateView(TestAuthBase):
         super().setUp()
         self.todo_set = TodoSet.objects.create(user=self.user, title="test_todo_set")
         self.todo = Todo.objects.create(
-            title="test_todo", start_date=timezone.localtime()
+            title="test_todo", start_date=timezone.localtime(), todo_set=self.todo_set
         )
 
     def test_update_todo_status(self):
@@ -195,13 +184,13 @@ class TestSubTodoView(TestAuthBase):
 
         self.todo_set = TodoSet.objects.create(user=self.user, title="test_todo_set")
         self.todo = Todo.objects.create(
-            title="test_todo", start_date=timezone.localtime()
+            todo_set=self.todo_set, title="test_todo", start_date=timezone.localtime()
         )
 
     def test_sub_todo_create(self):
         response = self.client.post(
             self.URL,
-            data={"title": "test_sub_todo", "start_date": timezone.localtime()},
+            data={"todo_set":self.todo_set, "title": "test_sub_todo", "start_date": timezone.localtime()},
         )
         data = response.json()
 
@@ -246,7 +235,7 @@ class TestSubTodoStatusView(TestAuthBase):
 
         self.todo_set = TodoSet.objects.create(user=self.user, title="test_todo_set")
         self.todo = Todo.objects.create(
-            title="test_todo", start_date=timezone.localtime()
+            todo_set=self.todo_set, title="test_todo", start_date=timezone.localtime()
         )
         self.sub_todo = SubTodo.objects.create(
             todo=self.todo, title="test_sub_todo", start_date=self.now
@@ -313,7 +302,7 @@ class TestTodoSetDetailView(TestAuthBase):
         self.todo_set = TodoSet.objects.create(user=self.user, title="test_todo_set")
 
     def test_update_todo_set(self):
-        response = self.client.put(self.URL, data={"title": "update_test_todo_set"})
+        response = self.client.put(self.URL, data={"title": "update_test_todo_set", "todo_set": self.todo_set.pk})
         data = response.json()
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)

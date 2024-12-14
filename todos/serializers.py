@@ -1,7 +1,7 @@
 from rest_framework import serializers as s
 from rest_framework.exceptions import NotFound, ParseError
 
-from memos.models import Memo
+from memos.models import Memo, MemoSet
 from memos.serializers import MemoDetailSerializer
 from todos.models import SubTodo, Todo, TodoSet
 
@@ -81,14 +81,17 @@ class TodoDetailSerializer(s.ModelSerializer):
         )
 
     def create(self, validated_data):
-        todo_set = validated_data.pop("todo_set", TodoSet.objects.get(user=validated_data.pop("user"), title="Todo"))
+        user = validated_data.pop("user")
+        todo_set = validated_data.pop("todo_set", TodoSet.objects.get(user=user, title="Todo"))
         memo = validated_data.pop("memo", None)
         todo_title = validated_data.pop("title", None)
 
         memo_title = memo.pop("title", None)
         memo_text = memo.pop("text", None)
+        memo_set = MemoSet.objects.get(user=user, title="Memo")
 
-        memo = Memo.objects.create(title=memo_title, text=memo_text)
+
+        memo = Memo.objects.create(title=memo_title, text=memo_text, memo_set=memo_set)
 
         try:
             todo_start = validated_data["start_date"]
