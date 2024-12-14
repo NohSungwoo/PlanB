@@ -1,10 +1,15 @@
 from datetime import date
 
+from django.core.exceptions import ObjectDoesNotExist
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
+from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.generics import ListAPIView
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+from calendars.models import Calendar
 
 from .serializers import (
     CalendarDetailSerializer,
@@ -18,6 +23,10 @@ class CalendarListView(APIView):
     캘린더들에 대한 작업을 처리합니다. 모든 캘린더를 조회하거나 새 캘린더를 추가합니다.
     """
 
+    permission_classes = [IsAuthenticated]
+    serializer_class = CalendarDetailSerializer
+    queryset = Calendar.objects.all()
+
     @extend_schema(
         summary="캘린더 목록 조회",
         description="유저가 등록한 모든 캘린더를 불러옵니다.",
@@ -25,7 +34,10 @@ class CalendarListView(APIView):
         tags=["Calendars"],
     )
     def get(self, request):
-        return Response({"message": "캘린더 목록 조회완료!"}, status=status.HTTP_200_OK)
+        queryset = self.queryset.filter(user=request.user)
+        serializer = self.serializer_class(instance=queryset, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(
         summary="캘린더 생성",
@@ -35,14 +47,26 @@ class CalendarListView(APIView):
         tags=["Calendars"],
     )
     def post(self, request):
-        # Placeholder implementation
-        return Response({"message": "Calendar created"}, status=status.HTTP_201_CREATED)
+        serializer = self.serializer_class(
+            data=request.data, context={"request": request}
+        )
+        if not serializer.is_valid():
+            return Response(
+                {"message": "Invalid Request 💀"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        serializer.save(user=request.user)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class CalendarDetailView(APIView):
     """
     캘린더 하나에 대한 작업을 처리합니다. 속성을 조회할 수 있으며, 업데이트, 삭제가 가능합니다.
     """
+
+    permission_classes = [IsAuthenticated]
+    serializer_class = CalendarDetailSerializer
+    queryset = Calendar.objects.all()
 
     @extend_schema(
         summary="캘린더 속성 조회",
@@ -52,25 +76,43 @@ class CalendarDetailView(APIView):
         tags=["Calendars"],
     )
     def get(self, request, calendar_name):
-        # Placeholder implementation
-        return Response(
-            {"message": f"Details for calendar {calendar_name}"},
-            status=status.HTTP_200_OK,
-        )
+        try:
+            instance = self.queryset.get(user=request.user, title=calendar_name)
+
+            serializer = self.serializer_class(instance=instance)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        except ObjectDoesNotExist:
+            raise NotFound(detail={"message": "해당 캘린더가 존재하지 않습니다."})
 
     @extend_schema(
         summary="캘린더 속성 수정",
-        description="캘린더의 속성을 수정합니다.",
+        description="캘린더의 속성을 수정합니다. Whole update",
         request=CalendarDetailSerializer,
         responses={200: CalendarDetailSerializer},
         tags=["Calendars"],
     )
     def put(self, request, calendar_name):
-        # Placeholder implementation
-        return Response(
-            {"message": f"Updated properties for calendar {calendar_name}"},
-            status=status.HTTP_200_OK,
-        )
+        try:
+            instance = self.queryset.get(user=request.user, title=calendar_name)
+
+            serializer = self.serializer_class(
+                instance=instance,
+                data=request.data,
+                partial=False,
+                context={"request": request},
+            )
+
+            if not serializer.is_valid():
+                raise ValidationError(serializer.errors)
+
+            updated_instance = serializer.save()
+            serializer = self.serializer_class(updated_instance)
+
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        except ObjectDoesNotExist:
+            raise NotFound(detail={"message": "캘린더가 존재하지 않습니다."})
 
     @extend_schema(
         summary="캘린더 삭제",
@@ -79,8 +121,16 @@ class CalendarDetailView(APIView):
         tags=["Calendars"],
     )
     def delete(self, request, calendar_name):
-        # Placeholder implementation
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        try:
+            instance = self.queryset.get(user=request.user, title=calendar_name)
+
+            serializer = self.serializer_class(instance=instance)
+            instance.delete()
+
+            return Response(serializer.data, status=status.HTTP_204_NO_CONTENT)
+
+        except ObjectDoesNotExist:
+            raise NotFound(detail={"message": "캘린더가 존재하지 않습니다."})
 
 
 class ScheduleCopyView(APIView):

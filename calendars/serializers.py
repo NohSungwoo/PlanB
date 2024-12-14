@@ -7,11 +7,35 @@ User = get_user_model()
 
 
 class CalendarDetailSerializer(s.ModelSerializer):
-    user = s.StringRelatedField()
+    user = s.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
         model = Calendar
         fields = "__all__"
+
+    def validate(self, data):
+        """
+        유저와 title이 고유한지 여부를 테스트합니다.
+        """
+        request = self.context.get("request")
+        if not request:
+            raise Exception({"context": "validate시에 context=user가 필요합니다."})
+
+        user = request.user
+        title = data.get("title")
+        if self.Meta.model.objects.filter(user=user, title=title).exists():
+            raise s.ValidationError(
+                {"title": f"해당 유저에 타이틀 '{title}'이 이미 존재합니다."}
+            )
+
+        return data
+
+    def update(self, instance: Calendar, validated_data) -> Calendar:
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        instance.save()
+        return instance
 
 
 class ScheduleDetailSerializer(s.ModelSerializer):

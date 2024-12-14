@@ -49,7 +49,14 @@ CUSTOM_APPS = [
     "drf_spectacular",
 ]
 
+DEBUG_APPS = [
+    "django_extensions",
+]
+
 INSTALLED_APPS = DJANGO_APPS + CUSTOM_APPS
+
+if DEBUG:
+    INSTALLED_APPS += DEBUG_APPS
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
