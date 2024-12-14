@@ -21,9 +21,9 @@ class TestMemoList(TestAuthBase):
     def setUp(self):
         super().setUp()
 
-        # create a test memoset
+        # create a default test memoset
 
-        self.memo_set = MemoSet.objects.create(user=self.user, title="TestMemoSet")
+        self.memo_set = MemoSet.objects.create(user=self.user, title="Memo")
 
         # create a test Memo
 
@@ -232,11 +232,28 @@ class TestMemoList(TestAuthBase):
 
     def test_create_memo(self):
         """Test creating a new Memo"""
-        payload = {"title": "New Memo title", "text": "New Memo text", "memo_set": 1}
+        payload = {
+            "title": "New Memo title",
+            "text": "New Memo text",
+            "memo_set": self.memo_set.pk,
+        }
         response = self.client.post(self.URL, payload)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         for attr, value in payload.items():
             self.assertEqual(response.data[attr], value)
+
+        self.assertEqual(Memo.objects.count(), 2)
+
+    def test_create_memo_with_default_set(self):
+        """payload에 memo_set을 누락시키면 기본 메모셋으로 연결됩니다."""
+        payload = {"title": "New Memo title", "text": "New Memo text"}
+        response = self.client.post(self.URL, payload)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        for attr, value in payload.items():
+            self.assertEqual(response.data[attr], value)
+
+        # check memo_set is correctly referenced
+        self.assertEqual(response.data["memo_set"], self.memo_set.pk)
 
         self.assertEqual(Memo.objects.count(), 2)
 
@@ -445,7 +462,8 @@ class TestMemoDetail(TestAuthBase):
         response = self.client.delete(invalid_url)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertEqual(len(Memo.objects.all()), 1)
-        
+
+
 class TestMemoSetList(TestAuthBase):
 
     URL = "/api/v1/memos/set/"
