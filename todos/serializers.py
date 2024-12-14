@@ -81,7 +81,7 @@ class TodoDetailSerializer(s.ModelSerializer):
         )
 
     def create(self, validated_data):
-        todo_set = ("todo_set", TodoSet.objects.get(user=validated_data.pop("user"), title="Todo"))
+        todo_set = validated_data.pop("todo_set", TodoSet.objects.get(user=validated_data.pop("user"), title="Todo"))
         memo = validated_data.pop("memo", None)
         todo_title = validated_data.pop("title", None)
 
@@ -104,7 +104,7 @@ class TodoDetailSerializer(s.ModelSerializer):
 
     def update(self, instance, validated_data):
         todo = instance
-        todo_set = ("todo_set", TodoSet.objects.get(user=validated_data.pop("user"), title="Todo"))
+        todo_set = validated_data.pop("todo_set", TodoSet.objects.get(user=validated_data.pop("user"), title="Todo"))
         memo = validated_data.pop("memo", None)
         todo_title = validated_data.pop("title")
         todo_start_date = validated_data.pop("start_date")
