@@ -72,7 +72,7 @@ class TodoListView(APIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        todo = serializer.save()
+        todo = serializer.save(user=request.user)
 
         serializer = self.serializer_class(todo)
 

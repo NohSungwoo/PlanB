@@ -1,7 +1,5 @@
-from xml.etree.ElementTree import ParseError
-
 from rest_framework import serializers as s
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, ParseError
 
 from memos.models import Memo
 from memos.serializers import MemoDetailSerializer
@@ -83,7 +81,7 @@ class TodoDetailSerializer(s.ModelSerializer):
         )
 
     def create(self, validated_data):
-        todo_set = validated_data.pop("todo_set", 1)
+        todo_set = ("todo_set", TodoSet.objects.get(user=validated_data.pop("user"), title="Todo"))
         memo = validated_data.pop("memo", None)
         todo_title = validated_data.pop("title", None)
 
@@ -106,7 +104,7 @@ class TodoDetailSerializer(s.ModelSerializer):
 
     def update(self, instance, validated_data):
         todo = instance
-        todo_set = validated_data.pop("todo_set")
+        todo_set = ("todo_set", TodoSet.objects.get(user=validated_data.pop("user"), title="Todo"))
         memo = validated_data.pop("memo", None)
         todo_title = validated_data.pop("title")
         todo_start_date = validated_data.pop("start_date")
