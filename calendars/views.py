@@ -1,4 +1,6 @@
 from datetime import date
+import datetime
+from xml.dom import ValidationErr
 
 from django.core.exceptions import ObjectDoesNotExist
 from drf_spectacular.utils import OpenApiParameter, extend_schema
@@ -53,9 +55,7 @@ class CalendarListView(APIView):
             data=request.data, context={"request": request}
         )
         if not serializer.is_valid():
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         serializer.save(user=request.user)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -200,17 +200,32 @@ class ScheduleListView(ListAPIView):
 
         param = request.query_params
 
-        if param.get("start_date"):
-            queryset = queryset.filter(start_date__gte=param.get("start_date"))
+        # `start_date` 필터링
+        if not param.get("start_date"):
+            raise ValidationErr("start_date is required")
+        start_date = datetime.datetime(param.get("start_date"))
+        queryset = queryset.filter(start_date__gte=start_date)
 
         # `calendar[]` 필터링
         if param.get("calendar[]") is not None:
             calendars = set(param.getlist("calendar[]"))
             queryset = queryset.filter(calendar__title__in=calendars)
 
+        # `view` 필터링
         if param.get("view"):
-            # !TODO
-            pass
+            match param.get("view"):
+                case "monthly":
+                    queryset = queryset.filter(
+                        start_date__month__lt=start_date.month + 1
+                    )
+                case "weekly":
+                    queryset = queryset.filter(
+                        start_date__lt=start_date + datetime.timedelta(days=7)
+                    )
+                case "daily":
+                    queryset = queryset.filter(
+                        start_date__lt=start_date + datetime.timedelta(days=1)
+                    )
 
         if param.get("page"):
             # !TODO
