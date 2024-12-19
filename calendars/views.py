@@ -7,6 +7,7 @@ from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.generics import ListAPIView
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -154,6 +155,7 @@ class ScheduleListView(ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = ScheduleDetailSerializer
     queryset = Schedule.objects.select_related("calendar")
+    pagination_class = PageNumberPagination
 
     @extend_schema(
         summary="일정 조회",
@@ -179,10 +181,11 @@ class ScheduleListView(ListAPIView):
                 default=1,
             ),
             OpenApiParameter(
-                name="direction",
-                description="페이지 조회시 순방향(next) 혹은 역방향(previous으로 이동하는 옵션입니다. 기본값은 next 입니다.",
+                name="page_size",
+                description="페이지당 표시되는 항목 수를 입력합니다. 기본값은 30입니다. 1부터 100까지의 정수를 허용합니다.",
                 required=False,
-                type=ScheduleDirectionChoices,
+                type=int,
+                default=30,
             ),
             OpenApiParameter(
                 name="calendar[]",
@@ -227,13 +230,7 @@ class ScheduleListView(ListAPIView):
                         start_date__lt=start_date + datetime.timedelta(days=1)
                     )
 
-        if param.get("page"):
-            # !TODO
-            pass
-
-        if param.get("direction"):
-            # !TODO
-            pass
+        # `page`, `page_size` 필터링은 PageNumberPagination 사용
 
         serializer = self.serializer_class(instance=queryset, many=True)
 
