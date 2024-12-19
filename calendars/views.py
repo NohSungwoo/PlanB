@@ -201,8 +201,7 @@ class ScheduleListView(ListAPIView):
         param = request.query_params
 
         if param.get("start_date"):
-            # !TODO
-            pass
+            queryset = queryset.filter(start_date__gte=param.get("start_date"))
 
         if param.get("calendar"):
             # !TODO
