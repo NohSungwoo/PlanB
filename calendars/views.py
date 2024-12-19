@@ -185,8 +185,8 @@ class ScheduleListView(ListAPIView):
                 type=ScheduleDirectionChoices,
             ),
             OpenApiParameter(
-                name="calendar",
-                description="캘린더 필터링, ','를 기준으로 분리.",
+                name="calendar[]",
+                description="캘린더 필터링, 다중인자를 허용합니다.",
                 required=False,
                 type=str,
             ),
@@ -203,9 +203,10 @@ class ScheduleListView(ListAPIView):
         if param.get("start_date"):
             queryset = queryset.filter(start_date__gte=param.get("start_date"))
 
-        if param.get("calendar"):
-            # !TODO
-            pass
+        # `calendar[]` 필터링
+        if param.get("calendar[]") is not None:
+            calendars = set(param.getlist("calendar[]"))
+            queryset = queryset.filter(calendar__title__in=calendars)
 
         if param.get("view"):
             # !TODO
