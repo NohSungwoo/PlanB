@@ -1,5 +1,4 @@
-from datetime import date, datetime
-from xml.dom import ValidationErr
+from datetime import date, datetime, timedelta
 
 from django.core.exceptions import ObjectDoesNotExist
 from drf_spectacular.utils import OpenApiParameter, extend_schema
@@ -16,7 +15,6 @@ from calendars.models import Calendar, Schedule
 from .serializers import (
     CalendarDetailSerializer,
     ScheduleDetailSerializer,
-    ScheduleDirectionChoices,
     ScheduleViewChoices,
     ScheduleUpdateSerializer,
 )
@@ -204,7 +202,7 @@ class ScheduleListView(ListAPIView):
 
         # `start_date` 필터링
         if not param.get("start_date"):
-            raise ValidationErr("start_date is required")
+            raise ValidationError("start_date is required")
         start_date = datetime.fromisoformat(param["start_date"])
         queryset = queryset.filter(start_date__gte=start_date)
 
@@ -222,11 +220,11 @@ class ScheduleListView(ListAPIView):
                     )
                 case "weekly":
                     queryset = queryset.filter(
-                        start_date__lt=start_date + datetime.timedelta(days=7)
+                        start_date__lt=start_date + timedelta(days=7)
                     )
                 case "daily":
                     queryset = queryset.filter(
-                        start_date__lt=start_date + datetime.timedelta(days=1)
+                        start_date__lt=start_date + timedelta(days=1)
                     )
 
         # `page`, `page_size` 필터링은 PageNumberPagination 사용
