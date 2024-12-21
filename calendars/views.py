@@ -1,5 +1,4 @@
-from datetime import date
-import datetime
+from datetime import date, datetime
 from xml.dom import ValidationErr
 
 from django.core.exceptions import ObjectDoesNotExist
@@ -206,7 +205,7 @@ class ScheduleListView(ListAPIView):
         # `start_date` 필터링
         if not param.get("start_date"):
             raise ValidationErr("start_date is required")
-        start_date = datetime.datetime(param.get("start_date"))
+        start_date = datetime.fromisoformat(param["start_date"])
         queryset = queryset.filter(start_date__gte=start_date)
 
         # `calendar[]` 필터링
