@@ -4,9 +4,7 @@ from rest_framework.authentication import get_user_model
 from rest_framework.reverse import reverse
 
 from calendars.models import Calendar, Schedule
-from memos.models import MemoSet
 from tests.auth_base_test import TestAuthBase
-from todos.models import TodoSet
 
 
 User = get_user_model()
@@ -175,3 +173,41 @@ class TestScheduleList(TestAuthBase):
 
 class TestScheduleDetail(TestAuthBase):
     pass
+
+
+class TestScheduleListPagination(TestAuthBase):
+    URL = "/api/v1/calendars/schedule/"
+
+    def setUp(self):
+        super().setUp()
+
+        self.calendar1 = Calendar.objects.create(user=self.user, title="Work")
+        self.calendar2 = Calendar.objects.create(user=self.user, title="Personal")
+        self.schedules = [
+            Schedule.objects.create(
+                calendar=self.calendar1,
+                start_date=datetime.now() + timedelta(days=i),
+                end_date=datetime.now() + timedelta(days=i, hours=1),
+                title=f"Meeting {i}",
+            )
+            for i in range(15)
+        ]
+        self.url = reverse("schedule-list")
+
+    def test_get_schedules_with_pagination(self):
+        response = self.client.get(self.url, {"start_date": datetime.now().isoformat(), "page": 1, "page_size": 10})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 10)
+
+    def test_get_schedules_with_pagination_second_page(self):
+        response = self.client.get(self.url, {"start_date": datetime.now().isoformat(), "page": 2, "page_size": 10})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 5)
+
+    def test_get_schedules_with_pagination_invalid_page(self):
+        response = self.client.get(self.url, {"start_date": datetime.now().isoformat(), "page": 3, "page_size": 10})
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_get_schedules_with_pagination_invalid_page_size(self):
+        response = self.client.get(self.url, {"start_date": datetime.now().isoformat(), "page": 1, "page_size": 100})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
