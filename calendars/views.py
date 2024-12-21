@@ -178,13 +178,6 @@ class ScheduleListView(ListAPIView):
                 default=1,
             ),
             OpenApiParameter(
-                name="page_size",
-                description="페이지당 표시되는 항목 수를 입력합니다. 기본값은 30입니다. 1부터 100까지의 정수를 허용합니다.",
-                required=False,
-                type=int,
-                default=30,
-            ),
-            OpenApiParameter(
                 name="calendar[]",
                 description="캘린더 필터링, 다중인자를 허용합니다.",
                 required=False,
@@ -227,7 +220,8 @@ class ScheduleListView(ListAPIView):
                         start_date__lt=start_date + timedelta(days=1)
                     )
 
-        # `page`, `page_size` 필터링은 PageNumberPagination 사용
+        # `page` 필터링
+        queryset = self.pagination_class().paginate_queryset(queryset, request, view=self)
 
         serializer = self.serializer_class(instance=queryset, many=True)
 

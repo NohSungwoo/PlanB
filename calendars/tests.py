@@ -110,11 +110,11 @@ class TestScheduleList(TestAuthBase):
 
     def test_get_sample_schedule(self):
         response = self.client.get(
-            self.URL, query_params={"start_date": self.schedule.start_date}
+            self.URL, query_params={"start_date": self.schedule1.start_date}
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 2)
-        self.assertEqual(response.data[0]["title"], self.schedule.title)
+        self.assertEqual(response.data[0]["title"], self.schedule1.title)
 
     def test_create_schedule_without_memo(self):
         payload = {
@@ -195,19 +195,21 @@ class TestScheduleListPagination(TestAuthBase):
         self.url = reverse("schedule-list")
 
     def test_get_schedules_with_pagination(self):
-        response = self.client.get(self.url, {"start_date": datetime.now().isoformat(), "page": 1, "page_size": 10})
+        response = self.client.get(
+            self.url, {"start_date": datetime.now().isoformat(), "page": 1}
+        )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 10)
 
     def test_get_schedules_with_pagination_second_page(self):
-        response = self.client.get(self.url, {"start_date": datetime.now().isoformat(), "page": 2, "page_size": 10})
+        response = self.client.get(
+            self.url, {"start_date": datetime.now().isoformat(), "page": 2}
+        )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 5)
 
     def test_get_schedules_with_pagination_invalid_page(self):
-        response = self.client.get(self.url, {"start_date": datetime.now().isoformat(), "page": 3, "page_size": 10})
+        response = self.client.get(
+            self.url, {"start_date": datetime.now().isoformat(), "page": 3}
+        )
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-
-    def test_get_schedules_with_pagination_invalid_page_size(self):
-        response = self.client.get(self.url, {"start_date": datetime.now().isoformat(), "page": 1, "page_size": 100})
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
