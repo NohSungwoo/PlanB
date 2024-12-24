@@ -1,4 +1,5 @@
 from datetime import date, datetime, timedelta
+from functools import partial
 
 from django.core.exceptions import ObjectDoesNotExist
 from drf_spectacular.utils import OpenApiParameter, extend_schema
@@ -11,6 +12,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from calendars.models import Calendar, Schedule
+from memos.models import Memo
+from memos.serializers import MemoDetailSerializer
 
 from .serializers import (
     CalendarDetailSerializer,
@@ -221,7 +224,9 @@ class ScheduleListView(ListAPIView):
                     )
 
         # `page` 필터링
-        queryset = self.pagination_class().paginate_queryset(queryset, request, view=self)
+        queryset = self.pagination_class().paginate_queryset(
+            queryset, request, view=self
+        )
 
         serializer = self.serializer_class(instance=queryset, many=True)
 
@@ -272,6 +277,10 @@ class ScheduleSearchView(APIView):
 
 
 class ScheduleDetailView(APIView):
+    serializer_class = ScheduleDetailSerializer
+    permission_classes = [IsAuthenticated]
+    queryset = Schedule.objects.select_related("calendar")
+
     @extend_schema(
         summary="일정 상세 조회",
         description="schedule_id path param을 기준으로 일정을 조회합니다.",
@@ -279,11 +288,9 @@ class ScheduleDetailView(APIView):
         tags=["Schedules"],
     )
     def get(self, request, schedule_id):
-        # Placeholder implementation
-        return Response(
-            {"message": f"Details for schedule {schedule_id}"},
-            status=status.HTTP_200_OK,
-        )
+        instance = self.queryset.get(pk=schedule_id)
+        serializer = self.serializer_class(instance)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(
         summary="일정 삭제",
@@ -291,9 +298,12 @@ class ScheduleDetailView(APIView):
         responses={204: ScheduleDetailSerializer},
         tags=["Schedules"],
     )
-    def delete(self, request, schedule_id):
-        # Placeholder implementation
-        return Response(status=status.HTTP_204_NO_CONTENT)
+    def delete(self, _, schedule_id):
+        instance = self.queryset.get(pk=schedule_id)
+        instance.delete()
+
+        serializer = self.serializer_class(instance)
+        return Response(serializer.data, status=status.HTTP_204_NO_CONTENT)
 
     @extend_schema(
         summary="일정 수정",
@@ -303,7 +313,22 @@ class ScheduleDetailView(APIView):
         tags=["Schedules"],
     )
     def put(self, request, schedule_id):
-        # Placeholder implementation
-        return Response(
-            {"message": f"Updated schedule {schedule_id}"}, status=status.HTTP_200_OK
+        instance = self.queryset.get(pk=schedule_id)
+        serializer = ScheduleUpdateSerializer(
+            instance,
+            data=request.data,
+            partial=True,
         )
+        if serializer.is_valid():
+            serializer.save()
+            memo_id = request.data.get("memo")
+            if memo_id:
+                memo_instance = Memo.objects.get(pk=memo_id)
+                memo_serializer = MemoDetailSerializer(
+                    memo_instance, data=request.data, partial=True
+                )
+                if memo_serializer.is_valid():
+                    memo_serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

@@ -47,7 +47,7 @@ class CalendarDetailSerializer(s.ModelSerializer):
 class ScheduleDetailSerializer(s.ModelSerializer):
     participant = s.PrimaryKeyRelatedField(read_only=True, many=True)
     memo = MemoDetailSerializer(required=False)
-    calendar = s.PrimaryKeyRelatedField(queryset=Calendar.objects.all(), many=False)
+    calendar = CalendarDetailSerializer(required=False)
 
     class Meta:
         model = Schedule
@@ -60,9 +60,16 @@ class ScheduleUpdateSerializer(s.ModelSerializer):
     """
 
     participant = s.SlugRelatedField(
-        slug_field="email", many=True, queryset=User.objects.all()
+        queryset=User.objects.all(),
+        required=False,
+        slug_field="email",
+        many=True,
     )
-    calendar = s.SlugRelatedField(slug_field="title", queryset=Calendar.objects.all())
+    calendar = s.SlugRelatedField(
+        queryset=Calendar.objects.all(),
+        required=False,
+        slug_field="title",
+    )
 
     class Meta:
         model = Schedule
