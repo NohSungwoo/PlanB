@@ -9,7 +9,7 @@ User = get_user_model()
 
 
 class MemoDetailSerializer(s.ModelSerializer):
-    memo_set = s.PrimaryKeyRelatedField(queryset=MemoSet.objects.all())
+    memo_set = s.PrimaryKeyRelatedField(queryset=MemoSet.objects.all(), required=False)
     memo_schedule = s.PrimaryKeyRelatedField(read_only=True)
     memo_todo = s.PrimaryKeyRelatedField(read_only=True)
 
@@ -23,6 +23,27 @@ class MemoDetailSerializer(s.ModelSerializer):
             "memo_schedule",
             "memo_todo",
         )
+
+    def create(self, validated_data) -> Memo:
+        request = self.context.get("request")
+
+        user = request.user
+        title = validated_data.pop("title")
+        text = validated_data.pop("text")
+
+        # get default memo_set if no "memo_set" found
+        memo_set = validated_data.pop(
+            "memo_set",
+            # TODO - abstract default memo_set name
+            MemoSet.objects.get(
+                user=user,
+                title="Memo",
+            ),
+        )
+
+        instance = Memo.objects.create(title=title, text=text, memo_set=memo_set)
+
+        return instance
 
     def update(self, instance: Memo, validated_data) -> Memo:
         for attr, value in validated_data.items():
