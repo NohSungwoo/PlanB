@@ -32,7 +32,7 @@ class SubTodo(CommonModel):
         "todos.todo", on_delete=models.CASCADE, related_name="todo_sub"
     )
     memo = models.OneToOneField(
-        "memos.Memo", on_delete=models.CASCADE, related_name="memo_sub"
+        "memos.Memo", on_delete=models.CASCADE, related_name="memo_sub", null=True
     )
     title = models.CharField(max_length=50)
     start_date = models.DateTimeField()

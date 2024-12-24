@@ -12,6 +12,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from calendars.models import Calendar
+from memos.models import Memo, MemoSet
+from todos.models import TodoSet
 from users.models import User
 from users.serializers import LoginSerializer, ProfileSerializer, UserSerializer
 
@@ -39,6 +42,10 @@ class SignUp(APIView):
 
         user.set_password(password)
         user.save()
+
+        MemoSet.objects.create(user=user, title="Memo")
+        TodoSet.objects.create(user=user, title="Todo")
+        Calendar.objects.create(user=user, title="Calendar")
 
         # Send Email Link
         email = user.email
