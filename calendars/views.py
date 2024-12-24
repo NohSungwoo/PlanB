@@ -1,19 +1,21 @@
-from datetime import date
+from datetime import date, datetime, timedelta
 
 from django.core.exceptions import ObjectDoesNotExist
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.generics import ListAPIView
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from calendars.models import Calendar
+from calendars.models import Calendar, Schedule
 
 from .serializers import (
     CalendarDetailSerializer,
     ScheduleDetailSerializer,
+    ScheduleViewChoices,
     ScheduleUpdateSerializer,
 )
 
@@ -51,9 +53,7 @@ class CalendarListView(APIView):
             data=request.data, context={"request": request}
         )
         if not serializer.is_valid():
-            return Response(
-                {"message": "Invalid Request 💀"}, status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         serializer.save(user=request.user)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -149,6 +149,11 @@ class ScheduleCopyView(APIView):
 
 
 class ScheduleListView(ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = ScheduleDetailSerializer
+    queryset = Schedule.objects.select_related("calendar")
+    pagination_class = PageNumberPagination
+
     @extend_schema(
         summary="일정 조회",
         description="기간 내의 일정을 조회합니다. 일간 보기, 주간 보기, 월간 보기 기능이 있으며, 날짜를 기준으로 Pagination을 지원합니다. 원하는 캘린더들을 선택하여 요청을 보낼 수 있습니다.",
@@ -160,11 +165,21 @@ class ScheduleListView(ListAPIView):
                 type=date,
             ),
             OpenApiParameter(
-                name="end_date", description="조회 종료 날짜", required=True, type=date
+                name="view",
+                description="뷰 타입으로, 일간(daily), 주간(weekly) 혹은 월간(monthly)으로 세팅합니다. 기본값은 월간입니다.",
+                required=False,
+                type=ScheduleViewChoices,
             ),
             OpenApiParameter(
-                name="calendar",
-                description="캘린더 필터링, ','를 기준으로 분리.",
+                name="page",
+                description="페이지 번호를 입력합니다. 1부터 세며, 기본값은 1입니다. 0보다 큰 정수를 허용합니다.",
+                required=False,
+                type=int,
+                default=1,
+            ),
+            OpenApiParameter(
+                name="calendar[]",
+                description="캘린더 필터링, 다중인자를 허용합니다.",
                 required=False,
                 type=str,
             ),
@@ -173,8 +188,44 @@ class ScheduleListView(ListAPIView):
         tags=["Schedules"],
     )
     def get(self, request):
-        # Placeholder implementation
-        return Response({"message": "List of schedules"}, status=status.HTTP_200_OK)
+        user = request.user
+        queryset = self.queryset.filter(calendar__user_id=user.id)
+
+        param = request.query_params
+
+        # `start_date` 필터링
+        if not param.get("start_date"):
+            raise ValidationError("start_date is required")
+        start_date = datetime.fromisoformat(param["start_date"])
+        queryset = queryset.filter(start_date__gte=start_date)
+
+        # `calendar[]` 필터링
+        if param.get("calendar[]") is not None:
+            calendars = set(param.getlist("calendar[]"))
+            queryset = queryset.filter(calendar__title__in=calendars)
+
+        # `view` 필터링
+        if param.get("view"):
+            match param.get("view"):
+                case "monthly":
+                    queryset = queryset.filter(
+                        start_date__month__lt=start_date.month + 1
+                    )
+                case "weekly":
+                    queryset = queryset.filter(
+                        start_date__lt=start_date + timedelta(days=7)
+                    )
+                case "daily":
+                    queryset = queryset.filter(
+                        start_date__lt=start_date + timedelta(days=1)
+                    )
+
+        # `page` 필터링
+        queryset = self.pagination_class().paginate_queryset(queryset, request, view=self)
+
+        serializer = self.serializer_class(instance=queryset, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(
         summary="일정 등록",
@@ -184,8 +235,13 @@ class ScheduleListView(ListAPIView):
         tags=["Schedules"],
     )
     def post(self, request):
-        # Placeholder implementation
-        return Response({"message": "Schedule created"}, status=status.HTTP_201_CREATED)
+        serializer = self.serializer_class(data=request.data)
+        if not serializer.is_valid():
+            raise ValidationError(serializer.errors)
+
+        serializer.save()
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class ScheduleSearchView(APIView):

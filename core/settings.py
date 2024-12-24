@@ -157,6 +157,8 @@ REST_FRAMEWORK = {
         "rest_framework.parsers.MultiPartParser",
     ],
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 10,  # 페이지당 표시되는 항목 수
 }
 
 # for more settings, see https://drf-spectacular.readthedocs.io/en/latest/settings.html

@@ -1,7 +1,13 @@
+from random import choice
+from types import FunctionType
+from typing import Self
 from django.contrib.auth import get_user_model
 from rest_framework import serializers as s
+from rest_framework.fields import ChoiceField
 
 from calendars.models import Calendar, Schedule
+from memos.models import Memo
+from memos.serializers import MemoDetailSerializer
 
 User = get_user_model()
 
@@ -25,7 +31,7 @@ class CalendarDetailSerializer(s.ModelSerializer):
         title = data.get("title")
         if self.Meta.model.objects.filter(user=user, title=title).exists():
             raise s.ValidationError(
-                {"title": f"해당 유저에 타이틀 '{title}'이 이미 존재합니다."}
+                {"title": f"해당 유저에 타이틀 '{title}'이/가 이미 존재합니다."}
             )
 
         return data
@@ -39,11 +45,9 @@ class CalendarDetailSerializer(s.ModelSerializer):
 
 
 class ScheduleDetailSerializer(s.ModelSerializer):
-    participant = s.SlugRelatedField(slug_field="email", read_only=True, many=True)
-    memo = s.HyperlinkedRelatedField(
-        view_name="memo-detail", read_only=True, allow_null=True
-    )
-    calendar = s.HyperlinkedRelatedField(view_name="title", read_only=True, many=False)
+    participant = s.PrimaryKeyRelatedField(read_only=True, many=True)
+    memo = MemoDetailSerializer(required=False)
+    calendar = s.PrimaryKeyRelatedField(queryset=Calendar.objects.all(), many=False)
 
     class Meta:
         model = Schedule
@@ -72,3 +76,25 @@ class ScheduleUpdateSerializer(s.ModelSerializer):
             "calendar",
             "participant",
         )
+
+
+class ScheduleViewChoices(s.Serializer):
+    """
+    ScheduleListView GET 요청의 query_params 중에서 `view` Choices를 명시하기 위해 사용되는 serializer 입니다.
+    """
+
+    view = ChoiceField(
+        choices=(
+            "monthly",
+            "daily",
+            "weekly",
+        )
+    )
+
+
+class ScheduleDirectionChoices(s.Serializer):
+    """
+    ScheduleListView GET 요청의 query_params 중에서 `direction` Choices를 명시하기 위해 사용하는 serializer 입니다.
+    """
+
+    direction = ChoiceField(choices=("next", "previous"))

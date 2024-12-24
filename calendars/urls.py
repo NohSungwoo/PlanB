@@ -11,7 +11,7 @@ from .views import (
 
 calendar_urls = [
     path(
-        "<str:calendar_name>/",
+        "name/<str:calendar_name>/",
         CalendarDetailView.as_view(),
         name="calendar-detail",
     ),
