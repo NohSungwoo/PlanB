@@ -19,7 +19,6 @@ class Schedule(CommonModel):
     calendar = models.ForeignKey(
         "calendars.Calendar",
         on_delete=models.CASCADE,
-        default=1,
         related_name="calendar_schedule",
     )
     participant = models.ManyToManyField("users.User", related_name="user_schedule")
