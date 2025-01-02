@@ -221,7 +221,9 @@ class ScheduleListView(ListAPIView):
                     )
 
         # `page` 필터링
-        queryset = self.pagination_class().paginate_queryset(queryset, request, view=self)
+        queryset = self.pagination_class().paginate_queryset(
+            queryset, request, view=self
+        )
 
         serializer = self.serializer_class(instance=queryset, many=True)
 
@@ -235,7 +237,9 @@ class ScheduleListView(ListAPIView):
         tags=["Schedules"],
     )
     def post(self, request):
-        serializer = self.serializer_class(data=request.data)
+        serializer = self.serializer_class(
+            data=request.data, context={"request": request}
+        )
         if not serializer.is_valid():
             raise ValidationError(serializer.errors)
 

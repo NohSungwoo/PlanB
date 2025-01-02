@@ -47,11 +47,35 @@ class CalendarDetailSerializer(s.ModelSerializer):
 class ScheduleDetailSerializer(s.ModelSerializer):
     participant = s.PrimaryKeyRelatedField(read_only=True, many=True)
     memo = MemoDetailSerializer(required=False)
-    calendar = s.PrimaryKeyRelatedField(queryset=Calendar.objects.all(), many=False)
+    calendar = s.SlugRelatedField(
+        slug_field="title",
+        queryset=Calendar.objects.all(),
+        required=False,
+    )
 
     class Meta:
         model = Schedule
         fields = "__all__"
+
+    def create(self, validated_data):
+        request = self.context.get("request")
+
+        user = request.user
+        memo = validated_data.pop("memo", None)
+        cal = validated_data.pop("calendar", None)
+
+        if cal is None:
+            # calendar 미포함시 기본 캘린더를 사용합니다.
+            default_cal = Calendar.objects.get(user_id=user.pk, title="Calendar"),
+            cal = default_cal[0]
+
+        instance = Schedule.objects.create(
+            memo=memo,
+            calendar=cal,
+            **validated_data,
+        )
+
+        return instance
 
 
 class ScheduleUpdateSerializer(s.ModelSerializer):
