@@ -276,6 +276,10 @@ class ScheduleSearchView(APIView):
 
 
 class ScheduleDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = ScheduleDetailSerializer
+    queryset = Schedule.objects.select_related("calendar")
+
     @extend_schema(
         summary="일정 상세 조회",
         description="schedule_id path param을 기준으로 일정을 조회합니다.",
@@ -283,11 +287,15 @@ class ScheduleDetailView(APIView):
         tags=["Schedules"],
     )
     def get(self, request, schedule_id):
-        # Placeholder implementation
-        return Response(
-            {"message": f"Details for schedule {schedule_id}"},
-            status=status.HTTP_200_OK,
-        )
+        instance: Schedule = self.queryset.get(pk=schedule_id)
+        if not instance:
+            return Response(
+                {"message": "schedule not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        serializer = self.serializer_class(instance=instance)
+        return Response(data=serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(
         summary="일정 삭제",
