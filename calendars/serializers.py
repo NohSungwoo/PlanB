@@ -76,6 +76,17 @@ class ScheduleDetailSerializer(s.ModelSerializer):
         )
 
         return instance
+    
+    def update(self, instance: Schedule, validated_data):
+        """
+        Schedule을 업데이트합니다.
+        연관 Memo는 업데이트되지 않습니다.
+        """
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        instance.save()
+        return instance
 
 
 class ScheduleUpdateSerializer(s.ModelSerializer):
