@@ -172,7 +172,30 @@ class TestScheduleList(TestAuthBase):
 
 
 class TestScheduleDetail(TestAuthBase):
-    pass
+    URL = "/api/v1/calendars/schedule/"
+
+    def setUp(self):
+        super().setUp()
+
+        # Create test calendar and schedule
+        self.calendar = Calendar.objects.create(user=self.user, title="Test Calendar")
+        self.schedule = Schedule.objects.create(
+            calendar=self.calendar,
+            title="Test Schedule",
+            start_date=datetime.now(),
+            end_date=datetime.now() + timedelta(hours=1)
+        )
+        self.url = f"{self.URL}{self.schedule.pk}/"
+
+    def test_delete_schedule_success(self):
+        response = self.client.delete(self.url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Schedule.objects.filter(id=self.schedule.pk).exists())
+
+    def test_delete_nonexistent_schedule(self):
+        non_existent_url = f"{self.URL}99999/"  # Using a non-existent ID
+        response = self.client.delete(non_existent_url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
 
 class TestScheduleListPagination(TestAuthBase):
