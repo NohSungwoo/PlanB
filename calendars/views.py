@@ -300,10 +300,16 @@ class ScheduleDetailView(APIView):
         tags=["Schedules"],
     )
     def delete(self, request, schedule_id):
-        instance = self.queryset.get(pk=schedule_id)
-        serializer = self.serializer_class(instance=instance)
-        instance.delete()
-        return Response(serializer.data, status=status.HTTP_204_NO_CONTENT)
+        try:
+            instance = self.queryset.get(pk=schedule_id)
+            if not instance:
+                raise NotFound(detail={"message": "해당 일정이 존재하지 않습니다."})
+            serializer = self.serializer_class(instance=instance)
+            instance.delete()
+            return Response(serializer.data, status=status.HTTP_204_NO_CONTENT)
+
+        except ObjectDoesNotExist as exc:
+            raise NotFound(detail={"message": "해당 캘린더가 존재하지 않습니다."}) from exc
 
     @extend_schema(
         summary="일정 수정",
