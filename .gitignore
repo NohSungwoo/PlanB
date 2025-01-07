@@ -267,3 +267,4 @@ pyrightconfig.json
 .idea/
 
 .vscode/
+.DS_Store
