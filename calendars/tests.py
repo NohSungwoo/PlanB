@@ -4,6 +4,7 @@ from rest_framework.authentication import get_user_model
 from rest_framework.reverse import reverse
 
 from calendars.models import Calendar, Schedule
+from memos.models import Memo, MemoSet
 from tests.auth_base_test import TestAuthBase
 
 
@@ -218,21 +219,67 @@ class TestScheduleListPagination(TestAuthBase):
         self.url = reverse("schedule-list")
 
     def test_get_schedules_with_pagination(self):
-        response = self.client.get(
-            self.url, {"start_date": datetime.now().isoformat(), "page": 1}
-        )
+        response = self.client.get(self.url, {"start_date": datetime.now().isoformat(), "page": 1})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 10)
 
     def test_get_schedules_with_pagination_second_page(self):
-        response = self.client.get(
-            self.url, {"start_date": datetime.now().isoformat(), "page": 2}
-        )
+        response = self.client.get(self.url, {"start_date": datetime.now().isoformat(), "page": 2})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 5)
 
     def test_get_schedules_with_pagination_invalid_page(self):
-        response = self.client.get(
-            self.url, {"start_date": datetime.now().isoformat(), "page": 3}
-        )
+        response = self.client.get(self.url, {"start_date": datetime.now().isoformat(), "page": 3})
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+
+class TestCopySchedule(TestAuthBase):
+    URL = "/api/v1/calendars/schedule/"
+
+    def setUp(self):
+        super().setUp()
+
+        self.memo_set = MemoSet.objects.create(user=self.user, title="MemoSet")
+        self.memo = Memo.objects.create(memo_set=self.memo_set, text="Memo")
+        self.calendar = Calendar.objects.create(user=self.user, title="Test Calendar")
+        self.schedule = Schedule.objects.create(
+            calendar=self.calendar,
+            start_date=datetime.now().date(),
+            end_date=datetime.now().date() + timedelta(days=1),
+            title="Original Schedule",
+            memo=self.memo,
+        )
+        self.copy_url = f"{self.URL}{self.schedule.pk}/copy/"
+
+    def test_copy_schedule(self):
+        response = self.client.post(self.copy_url)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        self.assertEqual(Schedule.objects.count(), 2)
+
+        copied_schedule = Schedule.objects.select_related("memo").latest("id")
+
+        self.assertNotEqual(copied_schedule.id, self.schedule.id)
+        self.assertEqual(copied_schedule.title, self.schedule.title)
+        self.assertEqual(copied_schedule.start_date, self.schedule.start_date)
+        self.assertEqual(copied_schedule.end_date, self.schedule.end_date)
+        self.assertNotEqual(copied_schedule.memo.pk, self.schedule.memo.pk)
+
+    def test_copy_nonexistent_schedule(self):
+        non_existent_url = f"{self.URL}99999/copy/"
+        response = self.client.post(non_existent_url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertIn("message", response.data)
+
+    def test_copy_schedule_with_no_memo(self):
+        """create a schedule with no memo and copy it"""
+        schedule = Schedule.objects.create(
+            calendar=self.calendar,
+            start_date=datetime.now().date(),
+            end_date=datetime.now().date() + timedelta(days=1),
+            title="Original Schedule",
+        )
+        copy_url = f"{self.URL}{schedule.pk}/copy/"
+        response = self.client.post(copy_url)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(Schedule.objects.last().memo, None)

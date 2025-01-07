@@ -1,5 +1,7 @@
+from copy import deepcopy
 from datetime import date, datetime, timedelta
 
+from django.conf.locale import de
 from django.core.exceptions import ObjectDoesNotExist
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
@@ -11,6 +13,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from calendars.models import Calendar, Schedule
+from memos.models import Memo
 
 from .serializers import (
     CalendarDetailSerializer,
@@ -134,18 +137,43 @@ class CalendarDetailView(APIView):
 
 
 class ScheduleCopyView(APIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = ScheduleDetailSerializer
+    queryset = Schedule.objects.select_related("memo")
+
     @extend_schema(
         summary="일정 복사",
-        description="schedule_id의 일정을 복사하여 새로운 일정으로 생성합니다. 이때 메모가 존재하면 메모도 함께 복사합니다.",
+        description="schedule_id의 일정을 복사하여 새로운 일정으로 생성합니다. 이때 메모가 존재하면 메모도 함께 복사합니다."
+        + "복사된 일정은 기존 일정과 동일한 속성을 가지고 일정의 시작일, 시작시간 모두 기존 일정과 동일하게 생성됩니다."
+        + "따라서, 복사된 일정의 시간을 변경하려면 일정 수정 API를 호출해야 합니다.",
         responses={201: ScheduleDetailSerializer},
         tags=["Schedules"],
     )
     def post(self, request, schedule_id):
-        # Placeholder implementation
-        return Response(
-            {"message": f"Copied schedule {schedule_id}"},
-            status=status.HTTP_201_CREATED,
-        )
+        try:
+            instance = self.queryset.get(pk=schedule_id)
+
+            # Copy instance
+            instance.pk = None
+            if instance.memo:
+                instance.memo.pk = None
+                new_memo = deepcopy(instance.memo)
+                new_memo.save()
+            else:
+                new_memo = None
+
+            new_schedule = deepcopy(instance)
+            new_schedule.memo = new_memo
+            new_schedule.save()
+
+            serializer = self.serializer_class(instance=new_schedule)
+
+            return Response(
+                data=serializer.data,
+                status=status.HTTP_201_CREATED,
+            )
+        except ObjectDoesNotExist as exc:
+            raise NotFound(detail={"message": "일정이 존재하지 않습니다."}) from exc
 
 
 class ScheduleListView(ListAPIView):
