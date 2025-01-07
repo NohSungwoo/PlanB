@@ -119,7 +119,7 @@ class TestScheduleList(TestAuthBase):
 
     def test_create_schedule_without_memo(self):
         payload = {
-            "calendar": self.calendar1.pk,
+            "calendar": self.calendar1.title,
             "title": "schedule1",
             "start_date": "9999-12-31",
         }
