@@ -300,8 +300,10 @@ class ScheduleDetailView(APIView):
         tags=["Schedules"],
     )
     def delete(self, request, schedule_id):
-        # Placeholder implementation
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        instance = self.queryset.get(pk=schedule_id)
+        serializer = self.serializer_class(instance=instance)
+        instance.delete()
+        return Response(serializer.data, status=status.HTTP_204_NO_CONTENT)
 
     @extend_schema(
         summary="일정 수정",
