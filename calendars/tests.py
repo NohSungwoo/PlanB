@@ -196,23 +196,17 @@ class TestScheduleListPagination(TestAuthBase):
         self.url = reverse("schedule-list")
 
     def test_get_schedules_with_pagination(self):
-        response = self.client.get(
-            self.url, {"start_date": datetime.now().isoformat(), "page": 1}
-        )
+        response = self.client.get(self.url, {"start_date": datetime.now().isoformat(), "page": 1})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 10)
 
     def test_get_schedules_with_pagination_second_page(self):
-        response = self.client.get(
-            self.url, {"start_date": datetime.now().isoformat(), "page": 2}
-        )
+        response = self.client.get(self.url, {"start_date": datetime.now().isoformat(), "page": 2})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 5)
 
     def test_get_schedules_with_pagination_invalid_page(self):
-        response = self.client.get(
-            self.url, {"start_date": datetime.now().isoformat(), "page": 3}
-        )
+        response = self.client.get(self.url, {"start_date": datetime.now().isoformat(), "page": 3})
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
 
@@ -253,3 +247,16 @@ class TestCopySchedule(TestAuthBase):
         response = self.client.post(non_existent_url)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertIn("message", response.data)
+
+    def test_copy_schedule_with_no_memo(self):
+        """create a schedule with no memo and copy it"""
+        schedule = Schedule.objects.create(
+            calendar=self.calendar,
+            start_date=datetime.now().date(),
+            end_date=datetime.now().date() + timedelta(days=1),
+            title="Original Schedule",
+        )
+        copy_url = f"{self.URL}{schedule.pk}/copy/"
+        response = self.client.post(copy_url)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(Schedule.objects.last().memo, None)

@@ -1,6 +1,7 @@
 from copy import deepcopy
 from datetime import date, datetime, timedelta
 
+from django.conf.locale import de
 from django.core.exceptions import ObjectDoesNotExist
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
@@ -154,13 +155,15 @@ class ScheduleCopyView(APIView):
 
             # Copy instance
             instance.pk = None
-            instance.memo.pk = None
+            if instance.memo:
+                instance.memo.pk = None
+                new_memo = deepcopy(instance.memo)
+                new_memo.save()
+            else:
+                new_memo = None
 
-            new_memo: Memo = deepcopy(instance.memo)
             new_schedule = deepcopy(instance)
             new_schedule.memo = new_memo
-
-            new_memo.save()
             new_schedule.save()
 
             serializer = self.serializer_class(instance=new_schedule)
