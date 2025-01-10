@@ -278,7 +278,9 @@ class ScheduleListView(ListAPIView):
 class ScheduleSearchView(APIView):
     permission_classes = [IsAuthenticated]
     serializer_class = ScheduleDetailSerializer
-    queryset = Schedule.objects.select_related("calendar")
+    queryset = Schedule.objects.select_related("calendar").prefetch_related(
+        "schedule_tags"
+    )
 
     @extend_schema(
         summary="일정 검색",
@@ -287,7 +289,7 @@ class ScheduleSearchView(APIView):
             사용하여 지정된 태그만을 필터링 할 수 있습니다.",
         parameters=[
             OpenApiParameter(
-                name="query", description="검색 문자열", required=True, type=str
+                name="query", description="검색 문자열", required=False, type=str
             ),
             OpenApiParameter(
                 name="tag[]",
@@ -305,16 +307,22 @@ class ScheduleSearchView(APIView):
         이번 티켓은 제목과 메모를 기준으로 검색하는 기능을 우선적으로 구현하자.
         """
 
-        query = request.query_params.get("query")
-        if not query:
-            raise ValidationError({"message": "검색어를 입력해주세요."})
+        param = request.query_params
+        query = param.get("query")
 
-        schedules = self.queryset.filter(
-            Q(title__icontains=query) | Q(memo__text__icontains=query)
-        ).distinct()
+        schedules = self.queryset
+        if query is not None:
+            schedules = schedules.filter(
+                Q(title__icontains=query) | Q(memo__text__icontains=query)
+            ).distinct()
+
+        # `tag[]` 필터링
+        if param.get("tag[]") is not None:
+            tags = set(param.getlist("tag[]"))
+            schedules = schedules.filter(schedule_tags__title__in=tags).distinct()
 
         serializer = self.serializer_class(schedules, many=True)
-        # Placeholder implementation
+
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -352,7 +360,9 @@ class ScheduleDetailView(APIView):
             return Response(serializer.data, status=status.HTTP_204_NO_CONTENT)
 
         except ObjectDoesNotExist as exc:
-            raise NotFound(detail={"message": "해당 캘린더가 존재하지 않습니다."}) from exc
+            raise NotFound(
+                detail={"message": "해당 캘린더가 존재하지 않습니다."}
+            ) from exc
 
     @extend_schema(
         summary="일정 수정",

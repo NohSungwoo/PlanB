@@ -347,7 +347,10 @@ class TestScheduleSearch(TestAuthBase):
         self.schedule3.schedule_tags.add(self.tag1)
 
     def test_search_by_english_title(self):
-        response = self.client.get(f"{self.URL}?query=meeting")
+        response = self.client.get(
+            self.URL,
+            query_params={"query": "meeting"}
+        )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["title"], "Team Meeting")
@@ -373,7 +376,10 @@ class TestScheduleSearch(TestAuthBase):
         self.assertEqual(response.data[0]["memo"]["text"], "점심 약속")
 
     def test_search_with_tag_filter(self):
-        response = self.client.get(f"{self.URL}?tag[]={self.tag1.title}")
+        response = self.client.get(
+            self.URL,
+            query_params={"tag[]": [self.tag1.title]}
+        )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 2)
         titles = {schedule["title"] for schedule in response.data}
@@ -381,19 +387,36 @@ class TestScheduleSearch(TestAuthBase):
 
     def test_search_with_multiple_tags(self):
         response = self.client.get(
-            f"{self.URL}?tag[]={self.tag1.title}&tag[]={self.tag3.title}"
+            self.URL,
+            query_params={
+                "tag[]": [self.tag1.title, self.tag3.title]
+            }
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            len(response.data),
+            2,
+            [(x["id"], x["title"], x["schedule_tags"]) for x in response.data],
+        )
+        self.assertContains(response, self.tag1.title)
+        self.assertContains(response, self.tag3.title)
+
+    def test_search_with_query_and_tag(self):
+        response = self.client.get(
+            self.URL,
+            query_params={
+                "query": "meeting",
+                "tag[]": [self.tag1.title]
+            }
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["title"], "Team Meeting")
 
-    def test_search_with_query_and_tag(self):
-        response = self.client.get(f"{self.URL}?query=meeting&tag[]={self.tag1.title}")
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]["title"], "Team Meeting")
-
     def test_search_no_results(self):
-        response = self.client.get(f"{self.URL}?query=nonexistent")
+        response = self.client.get(
+            self.URL,
+            query_params={"query": "nonexistent"}
+        )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 0)

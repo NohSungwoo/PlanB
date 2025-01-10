@@ -8,6 +8,7 @@ from rest_framework.fields import ChoiceField
 from calendars.models import Calendar, Schedule
 from memos.models import Memo
 from memos.serializers import MemoDetailSerializer
+from tags.models import Tag
 
 User = get_user_model()
 
@@ -50,6 +51,12 @@ class ScheduleDetailSerializer(s.ModelSerializer):
     calendar = s.SlugRelatedField(
         slug_field="title",
         queryset=Calendar.objects.all(),
+        required=False,
+    )
+    schedule_tags = s.SlugRelatedField(
+        slug_field="title",
+        queryset=Tag.objects.all(),
+        many=True,
         required=False,
     )
 
