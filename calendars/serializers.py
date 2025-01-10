@@ -70,10 +70,11 @@ class ScheduleDetailSerializer(s.ModelSerializer):
         user = request.user
         memo = validated_data.pop("memo", None)
         cal = validated_data.pop("calendar", None)
+        tags = validated_data.pop("schedule_tags", None)
 
         if cal is None:
             # calendar 미포함시 기본 캘린더를 사용합니다.
-            default_cal = Calendar.objects.get(user_id=user.pk, title="Calendar"),
+            default_cal = (Calendar.objects.get(user_id=user.pk, title="Calendar"),)
             cal = default_cal[0]
 
         instance = Schedule.objects.create(
@@ -82,8 +83,11 @@ class ScheduleDetailSerializer(s.ModelSerializer):
             **validated_data,
         )
 
+        instance.schedule_tags.set(tags)
+        instance.save()
+
         return instance
-    
+
     def update(self, instance: Schedule, validated_data):
         """
         Schedule을 업데이트합니다.
