@@ -1,7 +1,6 @@
 from copy import deepcopy
 from datetime import date, datetime, timedelta
 
-from django.conf.locale import de
 from django.core.exceptions import ObjectDoesNotExist
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
@@ -11,9 +10,9 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.db.models import Q
 
 from calendars.models import Calendar, Schedule
-from memos.models import Memo
 
 from .serializers import (
     CalendarDetailSerializer,
@@ -277,6 +276,10 @@ class ScheduleListView(ListAPIView):
 
 
 class ScheduleSearchView(APIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = ScheduleDetailSerializer
+    queryset = Schedule.objects.select_related("calendar")
+
     @extend_schema(
         summary="일정 검색",
         description="문자열 기반 검색을 수행합니다. \
@@ -287,8 +290,8 @@ class ScheduleSearchView(APIView):
                 name="query", description="검색 문자열", required=True, type=str
             ),
             OpenApiParameter(
-                name="tag",
-                description="포함할 태그, ','로 구분",
+                name="tag[]",
+                description="포함할 태그, 다중인자를 허용합니다.",
                 required=False,
                 type=str,
             ),
@@ -297,10 +300,22 @@ class ScheduleSearchView(APIView):
         tags=["Schedules"],
     )
     def get(self, request):
+        """
+        검색엔진을 도입하는 것은 추후에 진행하고 (https://docs.djangoproject.com/en/5.1/topics/db/search/ 참조)
+        이번 티켓은 제목과 메모를 기준으로 검색하는 기능을 우선적으로 구현하자.
+        """
+
+        query = request.query_params.get("query")
+        if not query:
+            raise ValidationError({"message": "검색어를 입력해주세요."})
+
+        schedules = self.queryset.filter(
+            Q(title__icontains=query) | Q(memo__text__icontains=query)
+        ).distinct()
+
+        serializer = self.serializer_class(schedules, many=True)
         # Placeholder implementation
-        return Response(
-            {"message": "Schedule search results"}, status=status.HTTP_200_OK
-        )
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class ScheduleDetailView(APIView):
