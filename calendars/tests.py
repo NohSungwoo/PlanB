@@ -118,6 +118,26 @@ class TestScheduleList(TestAuthBase):
         self.assertEqual(len(response.data), 2)
         self.assertEqual(response.data[0]["title"], self.schedule1.title)
 
+    def test_create_schedule_with_memo(self):
+        memo_set = MemoSet.objects.create(user=self.user, title="Memo")
+        payload = {
+            "calendar": self.calendar1.title,
+            "title": "schedule1",
+            "start_date": "9999-12-31",
+            "memo": {
+                "memo_set": memo_set.pk,
+                "title": "Test memo title",
+                "text": "Test memo text",
+            },
+        }
+        response = self.client.post(self.URL, data=payload, format="json")
+        self.assertEqual(
+            response.status_code, status.HTTP_201_CREATED, response.content
+        )
+        self.assertIn("memo", response.data)
+        self.assertEqual(response.data["memo"]["text"], "Test memo text")
+        self.assertEqual(response.data["memo"]["memo_set"], memo_set.id)
+
     def test_create_schedule_without_memo(self):
         payload = {
             "calendar": self.calendar1.title,
@@ -347,10 +367,7 @@ class TestScheduleSearch(TestAuthBase):
         self.schedule3.schedule_tags.add(self.tag1)
 
     def test_search_by_english_title(self):
-        response = self.client.get(
-            self.URL,
-            query_params={"query": "meeting"}
-        )
+        response = self.client.get(self.URL, query_params={"query": "meeting"})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["title"], "Team Meeting")
@@ -376,10 +393,7 @@ class TestScheduleSearch(TestAuthBase):
         self.assertEqual(response.data[0]["memo"]["text"], "점심 약속")
 
     def test_search_with_tag_filter(self):
-        response = self.client.get(
-            self.URL,
-            query_params={"tag[]": [self.tag1.title]}
-        )
+        response = self.client.get(self.URL, query_params={"tag[]": [self.tag1.title]})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 2)
         titles = {schedule["title"] for schedule in response.data}
@@ -387,10 +401,7 @@ class TestScheduleSearch(TestAuthBase):
 
     def test_search_with_multiple_tags(self):
         response = self.client.get(
-            self.URL,
-            query_params={
-                "tag[]": [self.tag1.title, self.tag3.title]
-            }
+            self.URL, query_params={"tag[]": [self.tag1.title, self.tag3.title]}
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(
@@ -403,20 +414,18 @@ class TestScheduleSearch(TestAuthBase):
 
     def test_search_with_query_and_tag(self):
         response = self.client.get(
-            self.URL,
-            query_params={
-                "query": "meeting",
-                "tag[]": [self.tag1.title]
-            }
+            self.URL, query_params={"query": "meeting", "tag[]": [self.tag1.title]}
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["title"], "Team Meeting")
 
     def test_search_no_results(self):
-        response = self.client.get(
-            self.URL,
-            query_params={"query": "nonexistent"}
-        )
+        response = self.client.get(self.URL, query_params={"query": "nonexistent"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 0)
+
+    def test_search_with_nonexistent_tag(self):
+        response = self.client.get(self.URL, query_params={"tag[]": ["NonexistentTag"]})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 0)

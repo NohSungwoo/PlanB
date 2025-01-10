@@ -6,7 +6,7 @@ from rest_framework import serializers as s
 from rest_framework.fields import ChoiceField
 
 from calendars.models import Calendar, Schedule
-from memos.models import Memo
+from memos.models import Memo, MemoSet
 from memos.serializers import MemoDetailSerializer
 from tags.models import Tag
 
@@ -78,12 +78,23 @@ class ScheduleDetailSerializer(s.ModelSerializer):
             cal = default_cal[0]
 
         instance = Schedule.objects.create(
-            memo=memo,
             calendar=cal,
             **validated_data,
         )
 
-        instance.schedule_tags.set(tags)
+        if memo is not None:
+            memo_instance = Memo.objects.create(
+                title=memo.pop("title"),
+                text=memo.pop("text"),
+                memo_set=memo.pop(
+                    "memo_set", MemoSet.objects.get(user=user, title="Memo")
+                ),
+            )
+            instance.memo = memo_instance
+
+        if tags is not None:
+            instance.schedule_tags.set(tags)
+
         instance.save()
 
         return instance
