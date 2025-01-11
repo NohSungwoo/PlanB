@@ -1,7 +1,6 @@
 from copy import deepcopy
 from datetime import date, datetime, timedelta
 
-from django.conf.locale import de
 from django.core.exceptions import ObjectDoesNotExist
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
@@ -11,9 +10,9 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.db.models import Q
 
 from calendars.models import Calendar, Schedule
-from memos.models import Memo
 
 from .serializers import (
     CalendarDetailSerializer,
@@ -277,6 +276,12 @@ class ScheduleListView(ListAPIView):
 
 
 class ScheduleSearchView(APIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = ScheduleDetailSerializer
+    queryset = Schedule.objects.select_related("calendar").prefetch_related(
+        "schedule_tags"
+    )
+
     @extend_schema(
         summary="일정 검색",
         description="문자열 기반 검색을 수행합니다. \
@@ -284,11 +289,11 @@ class ScheduleSearchView(APIView):
             사용하여 지정된 태그만을 필터링 할 수 있습니다.",
         parameters=[
             OpenApiParameter(
-                name="query", description="검색 문자열", required=True, type=str
+                name="query", description="검색 문자열", required=False, type=str
             ),
             OpenApiParameter(
-                name="tag",
-                description="포함할 태그, ','로 구분",
+                name="tag[]",
+                description="포함할 태그, 다중인자를 허용합니다.",
                 required=False,
                 type=str,
             ),
@@ -297,10 +302,28 @@ class ScheduleSearchView(APIView):
         tags=["Schedules"],
     )
     def get(self, request):
-        # Placeholder implementation
-        return Response(
-            {"message": "Schedule search results"}, status=status.HTTP_200_OK
-        )
+        """
+        검색엔진을 도입하는 것은 추후에 진행하고 (https://docs.djangoproject.com/en/5.1/topics/db/search/ 참조)
+        이번 티켓은 제목과 메모를 기준으로 검색하는 기능을 우선적으로 구현하자.
+        """
+
+        param = request.query_params
+        query = param.get("query")
+
+        schedules = self.queryset
+        if query is not None:
+            schedules = schedules.filter(
+                Q(title__icontains=query) | Q(memo__text__icontains=query)
+            ).distinct()
+
+        # `tag[]` 필터링
+        if param.get("tag[]") is not None:
+            tags = set(param.getlist("tag[]"))
+            schedules = schedules.filter(schedule_tags__title__in=tags).distinct()
+
+        serializer = self.serializer_class(schedules, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class ScheduleDetailView(APIView):
@@ -337,7 +360,9 @@ class ScheduleDetailView(APIView):
             return Response(serializer.data, status=status.HTTP_204_NO_CONTENT)
 
         except ObjectDoesNotExist as exc:
-            raise NotFound(detail={"message": "해당 캘린더가 존재하지 않습니다."}) from exc
+            raise NotFound(
+                detail={"message": "해당 캘린더가 존재하지 않습니다."}
+            ) from exc
 
     @extend_schema(
         summary="일정 수정",

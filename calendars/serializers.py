@@ -6,8 +6,9 @@ from rest_framework import serializers as s
 from rest_framework.fields import ChoiceField
 
 from calendars.models import Calendar, Schedule
-from memos.models import Memo
+from memos.models import Memo, MemoSet
 from memos.serializers import MemoDetailSerializer
+from tags.models import Tag
 
 User = get_user_model()
 
@@ -52,6 +53,12 @@ class ScheduleDetailSerializer(s.ModelSerializer):
         queryset=Calendar.objects.all(),
         required=False,
     )
+    schedule_tags = s.SlugRelatedField(
+        slug_field="title",
+        queryset=Tag.objects.all(),
+        many=True,
+        required=False,
+    )
 
     class Meta:
         model = Schedule
@@ -63,20 +70,35 @@ class ScheduleDetailSerializer(s.ModelSerializer):
         user = request.user
         memo = validated_data.pop("memo", None)
         cal = validated_data.pop("calendar", None)
+        tags = validated_data.pop("schedule_tags", None)
 
         if cal is None:
             # calendar 미포함시 기본 캘린더를 사용합니다.
-            default_cal = Calendar.objects.get(user_id=user.pk, title="Calendar"),
+            default_cal = (Calendar.objects.get(user_id=user.pk, title="Calendar"),)
             cal = default_cal[0]
 
         instance = Schedule.objects.create(
-            memo=memo,
             calendar=cal,
             **validated_data,
         )
 
+        if memo is not None:
+            memo_instance = Memo.objects.create(
+                title=memo.pop("title"),
+                text=memo.pop("text"),
+                memo_set=memo.pop(
+                    "memo_set", MemoSet.objects.get(user=user, title="Memo")
+                ),
+            )
+            instance.memo = memo_instance
+
+        if tags is not None:
+            instance.schedule_tags.set(tags)
+
+        instance.save()
+
         return instance
-    
+
     def update(self, instance: Schedule, validated_data):
         """
         Schedule을 업데이트합니다.

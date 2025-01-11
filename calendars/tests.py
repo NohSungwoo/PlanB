@@ -3,9 +3,10 @@ from rest_framework import status
 from rest_framework.authentication import get_user_model
 from rest_framework.reverse import reverse
 
+from tests.auth_base_test import TestAuthBase
 from calendars.models import Calendar, Schedule
 from memos.models import Memo, MemoSet
-from tests.auth_base_test import TestAuthBase
+from tags.models import Tag
 
 
 User = get_user_model()
@@ -117,6 +118,26 @@ class TestScheduleList(TestAuthBase):
         self.assertEqual(len(response.data), 2)
         self.assertEqual(response.data[0]["title"], self.schedule1.title)
 
+    def test_create_schedule_with_memo(self):
+        memo_set = MemoSet.objects.create(user=self.user, title="Memo")
+        payload = {
+            "calendar": self.calendar1.title,
+            "title": "schedule1",
+            "start_date": "9999-12-31",
+            "memo": {
+                "memo_set": memo_set.pk,
+                "title": "Test memo title",
+                "text": "Test memo text",
+            },
+        }
+        response = self.client.post(self.URL, data=payload, format="json")
+        self.assertEqual(
+            response.status_code, status.HTTP_201_CREATED, response.content
+        )
+        self.assertIn("memo", response.data)
+        self.assertEqual(response.data["memo"]["text"], "Test memo text")
+        self.assertEqual(response.data["memo"]["memo_set"], memo_set.id)
+
     def test_create_schedule_without_memo(self):
         payload = {
             "calendar": self.calendar1.title,
@@ -184,7 +205,7 @@ class TestScheduleDetail(TestAuthBase):
             calendar=self.calendar,
             title="Test Schedule",
             start_date=datetime.now(),
-            end_date=datetime.now() + timedelta(hours=1)
+            end_date=datetime.now() + timedelta(hours=1),
         )
         self.url = f"{self.URL}{self.schedule.pk}/"
 
@@ -219,17 +240,23 @@ class TestScheduleListPagination(TestAuthBase):
         self.url = reverse("schedule-list")
 
     def test_get_schedules_with_pagination(self):
-        response = self.client.get(self.url, {"start_date": datetime.now().isoformat(), "page": 1})
+        response = self.client.get(
+            self.url, {"start_date": datetime.now().isoformat(), "page": 1}
+        )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 10)
 
     def test_get_schedules_with_pagination_second_page(self):
-        response = self.client.get(self.url, {"start_date": datetime.now().isoformat(), "page": 2})
+        response = self.client.get(
+            self.url, {"start_date": datetime.now().isoformat(), "page": 2}
+        )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 5)
 
     def test_get_schedules_with_pagination_invalid_page(self):
-        response = self.client.get(self.url, {"start_date": datetime.now().isoformat(), "page": 3})
+        response = self.client.get(
+            self.url, {"start_date": datetime.now().isoformat(), "page": 3}
+        )
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
 
@@ -283,3 +310,122 @@ class TestCopySchedule(TestAuthBase):
         response = self.client.post(copy_url)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Schedule.objects.last().memo, None)
+
+
+class TestScheduleSearch(TestAuthBase):
+    URL = "/api/v1/calendars/schedule/search/"
+
+    def setUp(self):
+        super().setUp()
+
+        # Create calendar
+        self.calendar = Calendar.objects.create(user=self.user, title="Test Calendar")
+
+        # Create memo sets and memos
+        self.memo_set = MemoSet.objects.create(user=self.user, title="Test MemoSet")
+        self.memo1 = Memo.objects.create(
+            memo_set=self.memo_set, text="Meeting notes about project"
+        )
+        self.memo2 = Memo.objects.create(
+            memo_set=self.memo_set, text="점심 약속"
+        )  # Korean: Lunch appointment
+        self.memo3 = Memo.objects.create(
+            memo_set=self.memo_set, text="Regular status update"
+        )
+
+        # Create tags
+        self.tag1 = Tag.objects.create(title="work", user=self.user)
+        self.tag2 = Tag.objects.create(title="personal", user=self.user)
+        self.tag3 = Tag.objects.create(title="important", user=self.user)
+
+        # Create schedules with various combinations
+        self.schedule1 = Schedule.objects.create(
+            calendar=self.calendar,
+            title="Team Meeting",
+            start_date=datetime.now(),
+            end_date=datetime.now() + timedelta(hours=1),
+            memo=self.memo1,
+        )
+        self.schedule1.schedule_tags.add(self.tag1, self.tag3)
+
+        self.schedule2 = Schedule.objects.create(
+            calendar=self.calendar,
+            title="점심 미팅",  # Korean: Lunch meeting
+            start_date=datetime.now() + timedelta(days=1),
+            end_date=datetime.now() + timedelta(days=1, hours=1),
+            memo=self.memo2,
+        )
+        self.schedule2.schedule_tags.add(self.tag2)
+
+        self.schedule3 = Schedule.objects.create(
+            calendar=self.calendar,
+            title="Status Update",
+            start_date=datetime.now() + timedelta(days=2),
+            end_date=datetime.now() + timedelta(days=2, hours=1),
+            memo=self.memo3,
+        )
+        self.schedule3.schedule_tags.add(self.tag1)
+
+    def test_search_by_english_title(self):
+        response = self.client.get(self.URL, query_params={"query": "meeting"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["title"], "Team Meeting")
+
+    def test_search_by_korean_title(self):
+        response = self.client.get(f"{self.URL}?query=점심")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["title"], "점심 미팅")
+
+    def test_search_by_memo_text(self):
+        response = self.client.get(f"{self.URL}?query=project")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(
+            response.data[0]["memo"]["text"], "Meeting notes about project"
+        )
+
+    def test_search_by_korean_memo_text(self):
+        response = self.client.get(f"{self.URL}?query=약속")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["memo"]["text"], "점심 약속")
+
+    def test_search_with_tag_filter(self):
+        response = self.client.get(self.URL, query_params={"tag[]": [self.tag1.title]})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 2)
+        titles = {schedule["title"] for schedule in response.data}
+        self.assertEqual(titles, {"Team Meeting", "Status Update"})
+
+    def test_search_with_multiple_tags(self):
+        response = self.client.get(
+            self.URL, query_params={"tag[]": [self.tag1.title, self.tag3.title]}
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            len(response.data),
+            2,
+            [(x["id"], x["title"], x["schedule_tags"]) for x in response.data],
+        )
+        self.assertContains(response, self.tag1.title)
+        self.assertContains(response, self.tag3.title)
+
+    def test_search_with_query_and_tag(self):
+        response = self.client.get(
+            self.URL, query_params={"query": "meeting", "tag[]": [self.tag1.title]}
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["title"], "Team Meeting")
+
+    def test_search_no_results(self):
+        response = self.client.get(self.URL, query_params={"query": "nonexistent"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 0)
+
+    def test_search_with_nonexistent_tag(self):
+        response = self.client.get(self.URL, query_params={"tag[]": ["NonexistentTag"]})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 0)
